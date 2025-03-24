@@ -124,7 +124,8 @@ const Timeline = () => {
         
         // 隐藏Cesium的默认UI
         if (viewerRef.current.cesiumWidget.creditContainer) {
-          viewerRef.current.cesiumWidget.creditContainer.style.display = "none";
+          const creditContainer = viewerRef.current.cesiumWidget.creditContainer as HTMLElement;
+          creditContainer.style.display = "none";
         }
         
         // 设置初始视角为中国
