@@ -8,8 +8,8 @@ import * as Cesium from "cesium";
 import { Viewer, Entity, PolylineGraphics, PointGraphics, BillboardGraphics } from "resium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
-// Set the Cesium Ion access token (using public token)
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMWZiLTQzYjYtYTQ0OS1kMWFjYmFkNjc5YzciLCJpZCI6NTc3MzMsImlhdCI6MTYyMjY0NjQ4NH0.XcKpgANiY22ejqpJ55tquhgP7MemUKXfIvVhvmvfWW4";
+// Updated Cesium Ion access token
+const CESIUM_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlMTIwMDFhMi1lYTE3LTRlN2ItYjkyNC03NDZmODQ1NTE5MGIiLCJpZCI6MjgyNTk4LCJpYXQiOjE3NDE1MTc1ODd9.3eVQ4S6bC0EQXufwIqieOnrFQPSBOieEamC46Cj_yP8';
 
 const timelineEvents = [
   {
@@ -96,39 +96,51 @@ const Timeline = () => {
   const viewerRef = useRef<Cesium.Viewer | null>(null);
   const [cesiumLoaded, setCesiumLoaded] = useState(false);
 
+  // Initialize Cesium token before component mounts
+  useEffect(() => {
+    // Set token at the component level to avoid global token conflicts
+    Cesium.Ion.defaultAccessToken = CESIUM_TOKEN;
+  }, []);
+
   // 配置Cesium查看器
   useEffect(() => {
     if (viewerRef.current && !cesiumLoaded) {
-      // 移除默认的Bing Maps影像
-      viewerRef.current.imageryLayers.removeAll();
-      
-      // 添加高德地图作为底图
-      viewerRef.current.imageryLayers.addImageryProvider(
-        new Cesium.UrlTemplateImageryProvider({
-          url: 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
-          minimumLevel: 3,
-          maximumLevel: 18,
-          credit: '高德地图'
-        })
-      );
-      
-      // 禁用地形
-      viewerRef.current.scene.terrainProvider = new Cesium.EllipsoidTerrainProvider({});
-      
-      // 隐藏Cesium的默认UI
-      viewerRef.current.cesiumWidget.creditContainer.style.display = "none";
-      
-      // 设置初始视角为中国
-      viewerRef.current.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(105.0, 35.0, 5000000),
-        orientation: {
-          heading: Cesium.Math.toRadians(0),
-          pitch: Cesium.Math.toRadians(-90),
-          roll: 0.0
+      try {
+        // 移除默认的Bing Maps影像
+        viewerRef.current.imageryLayers.removeAll();
+        
+        // 添加高德地图作为底图
+        viewerRef.current.imageryLayers.addImageryProvider(
+          new Cesium.UrlTemplateImageryProvider({
+            url: 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+            minimumLevel: 3,
+            maximumLevel: 18,
+            credit: '高德地图'
+          })
+        );
+        
+        // 禁用地形
+        viewerRef.current.scene.terrainProvider = new Cesium.EllipsoidTerrainProvider({});
+        
+        // 隐藏Cesium的默认UI
+        if (viewerRef.current.cesiumWidget.creditContainer) {
+          viewerRef.current.cesiumWidget.creditContainer.style.display = "none";
         }
-      });
-      
-      setCesiumLoaded(true);
+        
+        // 设置初始视角为中国
+        viewerRef.current.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(105.0, 35.0, 5000000),
+          orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-90),
+            roll: 0.0
+          }
+        });
+        
+        setCesiumLoaded(true);
+      } catch (error) {
+        console.error("Error initializing Cesium viewer:", error);
+      }
     }
   }, [viewerRef.current]);
 
