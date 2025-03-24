@@ -2,6 +2,9 @@
 import React from "react";
 import Navigation from "./Navigation";
 
+// Import Cesium CSS
+import "cesium/Build/Cesium/Widgets/widgets.css";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
