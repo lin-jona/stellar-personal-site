@@ -2,89 +2,14 @@
 import { useRef, useState, useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { 
-  Briefcase, GraduationCap, MapPin, Calendar
+  Briefcase, GraduationCap, MapPin, Calendar, RefreshCw
 } from "lucide-react";
-import * as Cesium from "cesium";
 import { Viewer, Entity, PolylineGraphics, PointGraphics, BillboardGraphics } from "resium";
+import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
-// Token is set globally in Layout.tsx to avoid duplication
-
-const timelineEvents = [
-  {
-    id: "birth",
-    title: "出生地",
-    organization: "家乡",
-    location: "重庆",
-    date: "1990年",
-    description: "出生于重庆市，度过了童年时光。",
-    type: "birth",
-    coordinates: { lat: 29.5647, lng: 106.5501, height: 0 },
-    color: Cesium.Color.fromCssColorString("#D946EF") // 粉色
-  },
-  {
-    id: "education1",
-    title: "大学本科",
-    organization: "清华大学",
-    location: "北京",
-    date: "2010 - 2014",
-    description: "在清华大学计算机系完成本科学业，专注于人工智能和软件工程领域研究。",
-    type: "education",
-    coordinates: { lat: 40.0084, lng: 116.3220, height: 0 },
-    color: Cesium.Color.fromCssColorString("#0EA5E9") // 蓝色
-  },
-  {
-    id: "work1",
-    title: "初级开发工程师",
-    organization: "腾讯",
-    location: "深圳",
-    date: "2014 - 2016",
-    description: "在腾讯担任初级开发工程师，参与多个项目的开发，积累了丰富的实战经验。",
-    type: "work",
-    coordinates: { lat: 22.5431, lng: 114.0579, height: 0 },
-    color: Cesium.Color.fromCssColorString("#F97316") // 橙色
-  },
-  {
-    id: "work2",
-    title: "高级开发工程师",
-    organization: "阿里巴巴",
-    location: "杭州",
-    date: "2016 - 2020",
-    description: "在阿里巴巴担任高级开发工程师，带领团队完成多个重要项目，专注于大数据和云计算领域。",
-    type: "work",
-    coordinates: { lat: 30.2741, lng: 120.1551, height: 0 },
-    color: Cesium.Color.fromCssColorString("#8B5CF6") // 紫色
-  },
-  {
-    id: "work3",
-    title: "技术主管",
-    organization: "字节跳动",
-    location: "上海",
-    date: "2020 - 至今",
-    description: "目前在字节跳动担任技术主管，负责领导技术团队，专注于创新解决方案和技术卓越。",
-    type: "work",
-    coordinates: { lat: 31.2304, lng: 121.4737, height: 0 },
-    color: Cesium.Color.fromCssColorString("#10B981") // 绿色
-  }
-];
-
-// 初始化连接不同点的路线
-const createRoutes = () => {
-  const routes = [];
-  for (let i = 0; i < timelineEvents.length - 1; i++) {
-    const start = timelineEvents[i];
-    const end = timelineEvents[i + 1];
-    
-    routes.push({
-      id: `route-${start.id}-${end.id}`,
-      start: start.coordinates,
-      end: end.coordinates,
-      color: end.color,
-      width: 3
-    });
-  }
-  return routes;
-};
+// Import timeline data from a separate file for cleaner component
+import { timelineEvents, createRoutes } from "@/data/timelineData";
 
 const routes = createRoutes();
 
@@ -95,94 +20,127 @@ const Timeline = () => {
   const viewerRef = useRef<Cesium.Viewer | null>(null);
   const [cesiumLoaded, setCesiumLoaded] = useState(false);
   const [viewerError, setViewerError] = useState<string | null>(null);
+  const [isTokenInitialized, setIsTokenInitialized] = useState(false);
 
-  // 配置Cesium查看器
+  // Wait for token to be initialized
   useEffect(() => {
-    if (viewerRef.current && !cesiumLoaded) {
-      try {
-        // Ensure we don't run this twice
-        setCesiumLoaded(true);
-        
-        // 移除默认的Bing Maps影像
-        viewerRef.current.imageryLayers.removeAll();
-        
-        // 添加高德地图作为底图 - with error handling
-        try {
-          viewerRef.current.imageryLayers.addImageryProvider(
-            new Cesium.UrlTemplateImageryProvider({
-              url: 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
-              minimumLevel: 3,
-              maximumLevel: 18,
-              credit: '高德地图'
-            })
-          );
-        } catch (err) {
-          console.error("Error adding imagery provider:", err);
-          // Fall back to default imagery if custom fails
-        }
-        
-        // 禁用地形
-        viewerRef.current.scene.terrainProvider = new Cesium.EllipsoidTerrainProvider({});
-        
-        // 隐藏Cesium的默认UI
-        if (viewerRef.current.cesiumWidget.creditContainer) {
-          const creditContainer = viewerRef.current.cesiumWidget.creditContainer as HTMLElement;
-          creditContainer.style.display = "none";
-        }
-        
-        // 设置初始视角为中国 - with error handling
-        try {
-          viewerRef.current.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(105.0, 35.0, 5000000),
-            orientation: {
-              heading: Cesium.Math.toRadians(0),
-              pitch: Cesium.Math.toRadians(-90),
-              roll: 0.0
-            }
-          });
-        } catch (err) {
-          console.error("Error setting initial view:", err);
-        }
-        
-        // Add error event handler to capture rendering errors
-        if (viewerRef.current.scene) {
-          viewerRef.current.scene.renderError.addEventListener((error) => {
-            console.error("Cesium render error:", error);
-            setViewerError("地图渲染错误，请刷新页面重试。");
-          });
-        }
-      } catch (error) {
-        console.error("Error initializing Cesium viewer:", error);
-        setViewerError("初始化地图失败，请刷新页面重试。");
+    const checkToken = () => {
+      if (window.cesiumTokenInitialized) {
+        setIsTokenInitialized(true);
+        return true;
       }
-    }
-  }, [viewerRef.current, cesiumLoaded]);
+      return false;
+    };
 
-  // 当活动事件改变时，飞向对应的地点
-  useEffect(() => {
-    if (viewerRef.current && activeEvent && !viewerError) {
-      const event = timelineEvents.find(e => e.id === activeEvent);
-      if (event) {
-        try {
-          viewerRef.current.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(
-              event.coordinates.lng, 
-              event.coordinates.lat, 
-              1000000
-            ),
-            orientation: {
-              heading: Cesium.Math.toRadians(0),
-              pitch: Cesium.Math.toRadians(-60),
-              roll: 0.0
-            },
-            duration: 2
-          });
-        } catch (err) {
-          console.error("Error flying to location:", err);
+    if (!checkToken()) {
+      const intervalId = setInterval(() => {
+        if (checkToken()) {
+          clearInterval(intervalId);
         }
+      }, 100);
+
+      return () => clearInterval(intervalId);
+    }
+  }, []);
+
+  // Configure Cesium viewer
+  useEffect(() => {
+    if (!isTokenInitialized || !viewerRef.current || cesiumLoaded) {
+      return; // Don't proceed if token not initialized or viewer already configured
+    }
+
+    try {
+      // Ensure we don't run this twice
+      setCesiumLoaded(true);
+      
+      // Remove default Bing Maps imagery
+      viewerRef.current.imageryLayers.removeAll();
+      
+      // Add AMap as base layer - with error handling
+      try {
+        viewerRef.current.imageryLayers.addImageryProvider(
+          new Cesium.UrlTemplateImageryProvider({
+            url: 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+            minimumLevel: 3,
+            maximumLevel: 18,
+            credit: 'AMap'
+          })
+        );
+      } catch (err) {
+        console.error("Error adding imagery provider:", err);
+        // Fall back to default imagery if custom fails
+        viewerRef.current.imageryLayers.addImageryProvider(
+          new Cesium.IonImageryProvider({ assetId: 3 })
+        );
+      }
+      
+      // Disable terrain
+      viewerRef.current.scene.terrainProvider = new Cesium.EllipsoidTerrainProvider({});
+      
+      // Hide Cesium's default UI
+      if (viewerRef.current.cesiumWidget.creditContainer) {
+        const creditContainer = viewerRef.current.cesiumWidget.creditContainer as HTMLElement;
+        creditContainer.style.display = "none";
+      }
+      
+      // Set initial view to China - with error handling
+      try {
+        viewerRef.current.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(105.0, 35.0, 5000000),
+          orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-90),
+            roll: 0.0
+          }
+        });
+      } catch (err) {
+        console.error("Error setting initial view:", err);
+      }
+      
+      // Add error event handler to capture rendering errors
+      if (viewerRef.current.scene) {
+        viewerRef.current.scene.renderError.addEventListener((error) => {
+          console.error("Cesium render error:", error);
+          setViewerError("地图渲染错误，请刷新页面重试。");
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing Cesium viewer:", error);
+      setViewerError("初始化地图失败，请刷新页面重试。");
+    }
+  }, [viewerRef.current, cesiumLoaded, isTokenInitialized]);
+
+  // When active event changes, fly to the corresponding location
+  useEffect(() => {
+    if (!viewerRef.current || !activeEvent || viewerError) {
+      return;
+    }
+    
+    const event = timelineEvents.find(e => e.id === activeEvent);
+    if (event) {
+      try {
+        viewerRef.current.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(
+            event.coordinates.lng, 
+            event.coordinates.lat, 
+            1000000
+          ),
+          orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-60),
+            roll: 0.0
+          },
+          duration: 2
+        });
+      } catch (err) {
+        console.error("Error flying to location:", err);
       }
     }
   }, [activeEvent, viewerError]);
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   return (
     <section id="timeline" ref={sectionRef} className="section">
@@ -195,7 +153,7 @@ const Timeline = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-16">
-        {/* Cesium地球可视化 */}
+        {/* Cesium Earth Visualization */}
         <div className={`lg:w-1/2 h-[500px] glass rounded-xl p-6 relative ${
           isVisible ? "animate-fade-in-up" : "opacity-0"
         }`}>
@@ -204,11 +162,19 @@ const Timeline = () => {
               <div className="text-center p-6">
                 <p className="text-red-400 mb-4">{viewerError}</p>
                 <button 
-                  className="px-4 py-2 bg-accent rounded-md hover:bg-accent/80 transition-colors"
-                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-accent rounded-md hover:bg-accent/80 transition-colors flex items-center"
+                  onClick={handleRefresh}
                 >
+                  <RefreshCw size={16} className="mr-2" />
                   刷新页面
                 </button>
+              </div>
+            </div>
+          ) : !isTokenInitialized ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center p-6">
+                <p className="text-white/70 mb-4">正在加载地图组件...</p>
+                <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
             </div>
           ) : (
@@ -241,7 +207,7 @@ const Timeline = () => {
               navigationHelpButton={false}
               navigationInstructionsInitiallyVisible={false}
             >
-              {/* 渲染路线 */}
+              {/* Render Routes */}
               {routes.map((route) => (
                 <Entity key={route.id} position={Cesium.Cartesian3.fromDegrees(0, 0, 0)}>
                   <PolylineGraphics
@@ -256,7 +222,7 @@ const Timeline = () => {
                 </Entity>
               ))}
               
-              {/* 渲染地点标记 */}
+              {/* Render Location Markers */}
               {timelineEvents.map((event) => (
                 <Entity 
                   key={event.id} 
@@ -300,12 +266,12 @@ const Timeline = () => {
           )}
         </div>
         
-        {/* 时间线 */}
+        {/* Timeline section */}
         <div className={`lg:w-1/2 ${
           isVisible ? "animate-fade-in-up animate-delay-200" : "opacity-0"
         }`}>
           <div className="relative border-l-2 border-accent/30 pl-8 space-y-12">
-            {timelineEvents.map((event, index) => (
+            {timelineEvents.map((event) => (
               <div 
                 key={event.id}
                 className={`relative ${
@@ -313,7 +279,7 @@ const Timeline = () => {
                 } hover:opacity-100 transition-opacity cursor-pointer`}
                 onClick={() => setActiveEvent(event.id)}
               >
-                {/* 时间线节点 */}
+                {/* Timeline Node */}
                 <div 
                   className={`absolute -left-10 mt-1.5 w-5 h-5 rounded-full border-4 transition-colors duration-300`}
                   style={{ 
