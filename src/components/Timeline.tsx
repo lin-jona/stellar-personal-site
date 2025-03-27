@@ -8,8 +8,7 @@ import * as Cesium from "cesium";
 import { Viewer, Entity, PolylineGraphics, PointGraphics, BillboardGraphics } from "resium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
-// Updated Cesium Ion access token
-const CESIUM_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlMTIwMDFhMi1lYTE3LTRlN2ItYjkyNC03NDZmODQ1NTE5MGIiLCJpZCI6MjgyNTk4LCJpYXQiOjE3NDE1MTc1ODd9.3eVQ4S6bC0EQXufwIqieOnrFQPSBOieEamC46Cj_yP8';
+// Token is set globally in Layout.tsx to avoid duplication
 
 const timelineEvents = [
   {
@@ -95,29 +94,32 @@ const Timeline = () => {
   const [activeEvent, setActiveEvent] = useState(timelineEvents[timelineEvents.length - 1].id);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
   const [cesiumLoaded, setCesiumLoaded] = useState(false);
-
-  // Initialize Cesium token before component mounts
-  useEffect(() => {
-    // Set token at the component level to avoid global token conflicts
-    Cesium.Ion.defaultAccessToken = CESIUM_TOKEN;
-  }, []);
+  const [viewerError, setViewerError] = useState<string | null>(null);
 
   // 配置Cesium查看器
   useEffect(() => {
     if (viewerRef.current && !cesiumLoaded) {
       try {
+        // Ensure we don't run this twice
+        setCesiumLoaded(true);
+        
         // 移除默认的Bing Maps影像
         viewerRef.current.imageryLayers.removeAll();
         
-        // 添加高德地图作为底图
-        viewerRef.current.imageryLayers.addImageryProvider(
-          new Cesium.UrlTemplateImageryProvider({
-            url: 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
-            minimumLevel: 3,
-            maximumLevel: 18,
-            credit: '高德地图'
-          })
-        );
+        // 添加高德地图作为底图 - with error handling
+        try {
+          viewerRef.current.imageryLayers.addImageryProvider(
+            new Cesium.UrlTemplateImageryProvider({
+              url: 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+              minimumLevel: 3,
+              maximumLevel: 18,
+              credit: '高德地图'
+            })
+          );
+        } catch (err) {
+          console.error("Error adding imagery provider:", err);
+          // Fall back to default imagery if custom fails
+        }
         
         // 禁用地形
         viewerRef.current.scene.terrainProvider = new Cesium.EllipsoidTerrainProvider({});
@@ -128,44 +130,59 @@ const Timeline = () => {
           creditContainer.style.display = "none";
         }
         
-        // 设置初始视角为中国
-        viewerRef.current.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(105.0, 35.0, 5000000),
-          orientation: {
-            heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-90),
-            roll: 0.0
-          }
-        });
+        // 设置初始视角为中国 - with error handling
+        try {
+          viewerRef.current.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(105.0, 35.0, 5000000),
+            orientation: {
+              heading: Cesium.Math.toRadians(0),
+              pitch: Cesium.Math.toRadians(-90),
+              roll: 0.0
+            }
+          });
+        } catch (err) {
+          console.error("Error setting initial view:", err);
+        }
         
-        setCesiumLoaded(true);
+        // Add error event handler to capture rendering errors
+        if (viewerRef.current.scene) {
+          viewerRef.current.scene.renderError.addEventListener((error) => {
+            console.error("Cesium render error:", error);
+            setViewerError("地图渲染错误，请刷新页面重试。");
+          });
+        }
       } catch (error) {
         console.error("Error initializing Cesium viewer:", error);
+        setViewerError("初始化地图失败，请刷新页面重试。");
       }
     }
-  }, [viewerRef.current]);
+  }, [viewerRef.current, cesiumLoaded]);
 
   // 当活动事件改变时，飞向对应的地点
   useEffect(() => {
-    if (viewerRef.current && activeEvent) {
+    if (viewerRef.current && activeEvent && !viewerError) {
       const event = timelineEvents.find(e => e.id === activeEvent);
       if (event) {
-        viewerRef.current.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(
-            event.coordinates.lng, 
-            event.coordinates.lat, 
-            1000000
-          ),
-          orientation: {
-            heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-60),
-            roll: 0.0
-          },
-          duration: 2
-        });
+        try {
+          viewerRef.current.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(
+              event.coordinates.lng, 
+              event.coordinates.lat, 
+              1000000
+            ),
+            orientation: {
+              heading: Cesium.Math.toRadians(0),
+              pitch: Cesium.Math.toRadians(-60),
+              roll: 0.0
+            },
+            duration: 2
+          });
+        } catch (err) {
+          console.error("Error flying to location:", err);
+        }
       }
     }
-  }, [activeEvent]);
+  }, [activeEvent, viewerError]);
 
   return (
     <section id="timeline" ref={sectionRef} className="section">
@@ -182,91 +199,105 @@ const Timeline = () => {
         <div className={`lg:w-1/2 h-[500px] glass rounded-xl p-6 relative ${
           isVisible ? "animate-fade-in-up" : "opacity-0"
         }`}>
-          <Viewer
-            full
-            ref={(e) => {
-              if (e && e.cesiumElement) {
-                viewerRef.current = e.cesiumElement;
-              }
-            }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: '0.75rem',
-              overflow: 'hidden'
-            }}
-            animation={false}
-            baseLayerPicker={false}
-            fullscreenButton={false}
-            vrButton={false}
-            geocoder={false}
-            homeButton={false}
-            infoBox={false}
-            sceneModePicker={false}
-            selectionIndicator={false}
-            timeline={false}
-            navigationHelpButton={false}
-            navigationInstructionsInitiallyVisible={false}
-          >
-            {/* 渲染路线 */}
-            {routes.map((route) => (
-              <Entity key={route.id} position={Cesium.Cartesian3.fromDegrees(0, 0, 0)}>
-                <PolylineGraphics
-                  positions={Cesium.Cartesian3.fromDegreesArrayHeights([
-                    route.start.lng, route.start.lat, route.start.height,
-                    route.end.lng, route.end.lat, route.end.height
-                  ])}
-                  width={route.width}
-                  material={route.color}
-                  clampToGround={true}
-                />
-              </Entity>
-            ))}
-            
-            {/* 渲染地点标记 */}
-            {timelineEvents.map((event) => (
-              <Entity 
-                key={event.id} 
-                position={Cesium.Cartesian3.fromDegrees(
-                  event.coordinates.lng, 
-                  event.coordinates.lat, 
-                  event.coordinates.height
-                )}
-                name={event.title}
-                description={event.description}
-                onClick={() => setActiveEvent(event.id)}
-              >
-                <PointGraphics
-                  pixelSize={activeEvent === event.id ? 15 : 10}
-                  color={event.color}
-                  outlineColor={Cesium.Color.WHITE}
-                  outlineWidth={2}
-                  heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}
-                />
-                <BillboardGraphics
-                  image={`data:image/svg+xml;base64,${btoa(`
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${encodeURIComponent(event.color.toCssColorString())}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      ${event.type === 'education' 
-                        ? '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>'
-                        : event.type === 'work' 
-                          ? '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'
-                          : '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>'
-                      }
-                    </svg>
-                  `)}`}
-                  scale={activeEvent === event.id ? 1.5 : 1}
-                  disableDepthTestDistance={Number.POSITIVE_INFINITY}
-                  heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}
-                  verticalOrigin={Cesium.VerticalOrigin.BOTTOM}
-                  horizontalOrigin={Cesium.HorizontalOrigin.CENTER}
-                  pixelOffset={new Cesium.Cartesian2(0, -20)}
-                />
-              </Entity>
-            ))}
-          </Viewer>
+          {viewerError ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center p-6">
+                <p className="text-red-400 mb-4">{viewerError}</p>
+                <button 
+                  className="px-4 py-2 bg-accent rounded-md hover:bg-accent/80 transition-colors"
+                  onClick={() => window.location.reload()}
+                >
+                  刷新页面
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Viewer
+              full
+              ref={(e) => {
+                if (e && e.cesiumElement) {
+                  viewerRef.current = e.cesiumElement;
+                }
+              }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: '0.75rem',
+                overflow: 'hidden'
+              }}
+              animation={false}
+              baseLayerPicker={false}
+              fullscreenButton={false}
+              vrButton={false}
+              geocoder={false}
+              homeButton={false}
+              infoBox={false}
+              sceneModePicker={false}
+              selectionIndicator={false}
+              timeline={false}
+              navigationHelpButton={false}
+              navigationInstructionsInitiallyVisible={false}
+            >
+              {/* 渲染路线 */}
+              {routes.map((route) => (
+                <Entity key={route.id} position={Cesium.Cartesian3.fromDegrees(0, 0, 0)}>
+                  <PolylineGraphics
+                    positions={Cesium.Cartesian3.fromDegreesArrayHeights([
+                      route.start.lng, route.start.lat, route.start.height,
+                      route.end.lng, route.end.lat, route.end.height
+                    ])}
+                    width={route.width}
+                    material={route.color}
+                    clampToGround={true}
+                  />
+                </Entity>
+              ))}
+              
+              {/* 渲染地点标记 */}
+              {timelineEvents.map((event) => (
+                <Entity 
+                  key={event.id} 
+                  position={Cesium.Cartesian3.fromDegrees(
+                    event.coordinates.lng, 
+                    event.coordinates.lat, 
+                    event.coordinates.height
+                  )}
+                  name={event.title}
+                  description={event.description}
+                  onClick={() => setActiveEvent(event.id)}
+                >
+                  <PointGraphics
+                    pixelSize={activeEvent === event.id ? 15 : 10}
+                    color={event.color}
+                    outlineColor={Cesium.Color.WHITE}
+                    outlineWidth={2}
+                    heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}
+                  />
+                  <BillboardGraphics
+                    image={`data:image/svg+xml;base64,${btoa(`
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${encodeURIComponent(event.color.toCssColorString())}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        ${event.type === 'education' 
+                          ? '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>'
+                          : event.type === 'work' 
+                            ? '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'
+                            : '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>'
+                        }
+                      </svg>
+                    `)}`}
+                    scale={activeEvent === event.id ? 1.5 : 1}
+                    disableDepthTestDistance={Number.POSITIVE_INFINITY}
+                    heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}
+                    verticalOrigin={Cesium.VerticalOrigin.BOTTOM}
+                    horizontalOrigin={Cesium.HorizontalOrigin.CENTER}
+                    pixelOffset={new Cesium.Cartesian2(0, -20)}
+                  />
+                </Entity>
+              ))}
+            </Viewer>
+          )}
         </div>
         
         {/* 时间线 */}
