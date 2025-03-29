@@ -4,15 +4,16 @@ import {
   Briefcase, GraduationCap, MapPin, Calendar
 } from "lucide-react";
 import * as Cesium from "cesium";
-// Import specific Cesium components and Resium components
 import {
   Viewer,
   Entity,
   PolylineGraphics,
   PointGraphics,
+  LabelGraphics,
   BillboardGraphics,
-  ImageryLayer // Import ImageryLayer from Resium
+  ImageryLayer
 } from "resium";
+import TimelineEventItem from './TimelineEventItem'; 
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
 // Updated Cesium Ion access token
@@ -35,7 +36,6 @@ const initialCameraOrientation = {
   roll: 0.0
 };
 
-// --- Timeline Data (Keep as before) ---
 const timelineEvents = [
   {
     id: "birth",
@@ -69,28 +69,6 @@ const timelineEvents = [
     type: "work",
     coordinates: { lat: 22.5431, lng: 114.0579, height: 0 },
     color: Cesium.Color.fromCssColorString("#F97316") // 橙色
-  },
-  {
-    id: "work2",
-    title: "高级开发工程师",
-    organization: "阿里巴巴",
-    location: "杭州",
-    date: "2016 - 2020",
-    description: "在阿里巴巴担任高级开发工程师，带领团队完成多个重要项目，专注于大数据和云计算领域。",
-    type: "work",
-    coordinates: { lat: 30.2741, lng: 120.1551, height: 0 },
-    color: Cesium.Color.fromCssColorString("#8B5CF6") // 紫色
-  },
-  {
-    id: "work3",
-    title: "技术主管",
-    organization: "字节跳动",
-    location: "上海",
-    date: "2020 - 至今",
-    description: "目前在字节跳动担任技术主管，负责领导技术团队，专注于创新解决方案和技术卓越。",
-    type: "work",
-    coordinates: { lat: 31.2304, lng: 121.4737, height: 0 },
-    color: Cesium.Color.fromCssColorString("#10B981") // 绿色
   }
 ];
 
@@ -112,6 +90,12 @@ const createRoutes = () => {
 
 const routes = createRoutes();
 
+interface AnimationData {
+  positionProperty: Cesium.SampledPositionProperty;
+  startTime: Cesium.JulianDate;
+  stopTime: Cesium.JulianDate;
+};
+
 // --- Component ---
 const Timeline = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -119,6 +103,8 @@ const Timeline = () => {
   const [activeEvent, setActiveEvent] = useState(timelineEvents[timelineEvents.length - 1].id);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
   const [viewerReady, setViewerReady] = useState(false);
+  // --- State for the moving entity animation ---
+  const [activePathAnimation, setActivePathAnimation] = useState<AnimationData | null>(null);
 
   // Set Cesium Token (Runs once on mount)
   useEffect(() => {
@@ -165,6 +151,26 @@ const Timeline = () => {
     }
   }, [viewerRef.current]); // Depend only on viewerRef.current changing
 
+  const createPathAnimation = (
+    startCoords: { lat: number; lng: number; height: number },
+    endCoords: { lat: number; lng: number; height: number },
+    durationSeconds: number
+  ): AnimationData => {
+    const positionProperty = new Cesium.SampledPositionProperty();
+    const startTime = Cesium.JulianDate.now();
+    const stopTime = Cesium.JulianDate.addSeconds(startTime, durationSeconds, new Cesium.JulianDate());
+
+    // Add the start position sample
+    const startPosition = Cesium.Cartesian3.fromDegrees(startCoords.lng, startCoords.lat, startCoords.height);
+    positionProperty.addSample(startTime, startPosition);
+
+    // Add the end position sample
+    const endPosition = Cesium.Cartesian3.fromDegrees(endCoords.lng, endCoords.lat, endCoords.height);
+    positionProperty.addSample(stopTime, endPosition);
+
+    return { positionProperty, startTime, stopTime };
+  }
+
   // Effect to fly camera when activeEvent changes
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -179,7 +185,7 @@ const Timeline = () => {
           ),
           orientation: {
             heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-60),
+            pitch: Cesium.Math.toRadians(-85),
             roll: 0.0
           },
           duration: 1.5
@@ -187,6 +193,49 @@ const Timeline = () => {
       }
     }
   }, [activeEvent, viewerReady]);
+
+// --- Effect to Control the Cesium Clock for the Animation ---
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (viewer && !viewer.isDestroyed() && viewerReady && activePathAnimation) {
+      viewer.clock.startTime = activePathAnimation.startTime.clone();
+      viewer.clock.stopTime = activePathAnimation.stopTime.clone();
+      viewer.clock.currentTime = activePathAnimation.startTime.clone(); // Start from the beginning
+      viewer.clock.clockRange = Cesium.ClockRange.CLAMPED; // Stop when reaching stopTime
+      // Or use LOOP_STOP to loop and then stop: Cesium.ClockRange.LOOP_STOP;
+      viewer.clock.multiplier = 2.0; // Control animation speed
+      viewer.clock.shouldAnimate = true; // Start playing the clock
+
+    } else if (viewer && !viewer.isDestroyed() && viewerReady && !activePathAnimation) {
+      // If no animation is active, reset the clock
+      // viewer.clock.shouldAnimate = false;
+    }
+  }, [activePathAnimation, viewerReady]);
+
+  // --- Function to Handle Timeline Item Click ---
+  const handleTimelineClick = (eventId: string) => {
+    setActiveEvent(eventId);
+
+    // --- Trigger Path Animation ---
+    const clickedEventIndex = timelineEvents.findIndex(e => e.id === eventId);
+
+    // Check if there's a *previous* event to animate *from*
+    if (clickedEventIndex > 0) {
+      const previousEvent = timelineEvents[clickedEventIndex - 1];
+      const currentEvent = timelineEvents[clickedEventIndex];
+      const animationDuration = 5; // seconds - adjust as needed
+
+      const newAnimationData = createPathAnimation(
+        previousEvent.coordinates,
+        currentEvent.coordinates,
+        animationDuration
+      );
+      setActivePathAnimation(newAnimationData);
+    } else {
+      // It's the first event, no path to animate *to* it. Clear any existing animation.
+      setActivePathAnimation(null);
+    }
+  };
 
   return (
     <section id="timeline" ref={sectionRef} className="section">
@@ -230,20 +279,21 @@ const Timeline = () => {
             timeline={false}
             navigationHelpButton={false}
             navigationInstructionsInitiallyVisible={false}
+            shouldAnimate={true}
           >
             {/* --- Add Imagery Layer using Resium Component --- */}
             <ImageryLayer imageryProvider={gaodeImageryProvider} />
 
-            {/* Render Routes */}
+            {/* Render Static Routes */}
             {routes.map((route) => (
-              <Entity key={route.id}>
+              <Entity key={route.id} description="">
                 <PolylineGraphics
                   positions={Cesium.Cartesian3.fromDegreesArrayHeights([
                     route.start.lng, route.start.lat, route.start.height,
                     route.end.lng, route.end.lat, route.end.height
                   ])}
                   width={route.width}
-                  material={route.color}
+                  material={Cesium.Color.GRAY.withAlpha(0.6)}
                   clampToGround={true}
                 />
               </Entity>
@@ -260,7 +310,7 @@ const Timeline = () => {
                 )}
                 name={event.title}
                 description={event.description}
-                onClick={() => setActiveEvent(event.id)}
+                onClick={() => handleTimelineClick(event.id)}
               >
                 <PointGraphics
                   pixelSize={activeEvent === event.id ? 15 : 10}
@@ -269,6 +319,23 @@ const Timeline = () => {
                   outlineWidth={2}
                   heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}
                   scaleByDistance={new Cesium.NearFarScalar(1.5e2, 1.5, 8.0e6, 0.0)}
+                  // Make sure points are visible even when moving entity is over them
+                  disableDepthTestDistance={Number.POSITIVE_INFINITY}
+                />
+                <LabelGraphics
+                  // 将 event.description 包装在 ConstantProperty 中
+                  text={new Cesium.CallbackProperty(() => event.description, false)}
+                  font= {'10pt monospace'}
+                  style = {Cesium.LabelStyle.FILL_AND_OUTLINE}
+                  outlineWidth= {2}
+                  verticalOrigin= {Cesium.VerticalOrigin.BOTTOM} // Label 放在 Point 上方
+                  horizontalOrigin={Cesium.HorizontalOrigin.CENTER}
+                  pixelOffset= {new Cesium.Cartesian2(0, -15)}   // 向上偏移一点，避免遮挡 Point
+                  showBackground= {true}                        // 显示背景，更像 Tooltip
+                  backgroundColor= {new Cesium.Color(0.165, 0.165, 0.165, 0.8)} // 背景色
+                  backgroundPadding= {new Cesium.Cartesian2(7, 5)} // 背景内边距
+                  show = {true}
+                  disableDepthTestDistance= {Number.POSITIVE_INFINITY} // 防止标签被地形遮挡
                 />
                 <BillboardGraphics
                   image={`data:image/svg+xml;base64,${btoa(`
@@ -283,7 +350,8 @@ const Timeline = () => {
                   `)}`}
                   scale={activeEvent === event.id ? 1.5 : 1.0}
                   heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}
-                  pixelOffset={new Cesium.Cartesian2(0, -15)}
+                  // 让图标显示在点的正上方
+                  // pixelOffset={new Cesium.Cartesian2(0, -15)}
                   verticalOrigin={Cesium.VerticalOrigin.BOTTOM}
                   horizontalOrigin={Cesium.HorizontalOrigin.CENTER}
                   disableDepthTestDistance={Number.POSITIVE_INFINITY}
@@ -291,6 +359,24 @@ const Timeline = () => {
                 />
               </Entity>
             ))}
+
+            {/* --- Render the MOVING Entity (only when animation is active) --- */}
+            {activePathAnimation && (
+              <Entity
+                position={activePathAnimation.positionProperty} // Assign the dynamic position!
+                name="My Journey" // Optional name
+                description="" // Avoid default infobox
+              >
+                {/* --- Visual Representation of the Moving Object --- */}
+                <BillboardGraphics
+                  image={"/Airplane.png"} 
+                  scale={0.1}
+                  disableDepthTestDistance={Number.POSITIVE_INFINITY}
+                  heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}
+                  verticalOrigin={Cesium.VerticalOrigin.BOTTOM}
+                />
+              </Entity>
+            )}
           </Viewer>
         </div>
 
@@ -298,61 +384,15 @@ const Timeline = () => {
         <div className={`lg:w-1/2 ${
           isVisible ? "animate-fade-in-up animate-delay-200" : "opacity-0"
         }`}>
-          {/* ... (Timeline list JSX remains the same) ... */}
            <div className="relative border-l-2 border-accent/30 pl-8 space-y-12">
             {timelineEvents.map((event) => (
-              <div
-                key={event.id}
-                className={`relative ${
-                  activeEvent === event.id ? 'opacity-100' : 'opacity-70'
-                } hover:opacity-100 transition-opacity duration-300 cursor-pointer`}
-                onClick={() => setActiveEvent(event.id)}
-              >
-                {/* Timeline Node */}
-                <div
-                  className={`absolute -left-[42px] mt-1.5 w-5 h-5 rounded-full border-4 transition-all duration-300`} // Adjusted left position for border
-                  style={{
-                    borderColor: event.color.toCssColorString(),
-                    backgroundColor: activeEvent === event.id ? event.color.toCssColorString() : 'var(--background)', // Use background color for inactive
-                    transform: activeEvent === event.id ? 'scale(1.1)' : 'scale(1.0)' // Slightly scale active node
-                  }}
-                ></div>
-                {/* Timeline Card */}
-                <div className={`glass p-6 rounded-xl transition-all duration-300 ${
-                  activeEvent === event.id ? 'bg-white/10 shadow-lg' : '' // Enhanced active state
-                }`}
-                style={{
-                  boxShadow: activeEvent === event.id ? `0 6px 20px ${event.color.withAlpha(0.25).toCssColorString()}` : 'none' // More prominent shadow
-                }}>
-                  {/* Date and Location */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mb-2">
-                    <span className="inline-flex items-center text-xs text-white/70">
-                      <Calendar size={14} className="mr-1.5" />{event.date}
-                    </span>
-                    <span className="inline-flex items-center text-xs text-white/70">
-                      <MapPin size={14} className="mr-1.5" />{event.location}
-                    </span>
-                  </div>
-                  {/* Title and Icon */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="p-2 rounded-full mt-0.5" style={{ backgroundColor: `${event.color.withAlpha(0.1).toCssColorString()}` }}>
-                      {event.type === 'education' ? (
-                        <GraduationCap size={20} style={{ color: event.color.toCssColorString() }} />
-                      ) : event.type === 'work' ? (
-                        <Briefcase size={20} style={{ color: event.color.toCssColorString() }} />
-                      ) : (
-                        <MapPin size={20} style={{ color: event.color.toCssColorString() }} /> // Using MapPin for birth
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium">{event.title}</h3>
-                      <p className="text-sm text-white/70 -mt-0.5">{event.organization}</p>
-                    </div>
-                  </div>
-                  {/* Description */}
-                  <p className="text-sm text-white/80 leading-relaxed">{event.description}</p>
-                </div>
-              </div>
+               <TimelineEventItem
+               key={event.id}
+               event={event}
+               isActive={activeEvent === event.id}
+               onClick={handleTimelineClick}
+               parallaxFactor={0.05}
+             />
             ))}
           </div>
         </div>
