@@ -13,7 +13,11 @@ const navLinks = [
   { name: "Contact", href: "#contact" },
 ];
 
-const Navigation = () => {
+interface NavigationProps {
+  showDice?: boolean;
+}
+
+const Navigation: React.FC<NavigationProps> = ({ showDice = true }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -59,18 +63,21 @@ const Navigation = () => {
     >
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 lg:px-20 flex items-center justify-between h-full">
       <div className="flex items-center space-x-3">
+      {/* 条件渲染骰子 Canvas */}
+      {showDice && (
         <div className="w-7 h-7 md:w-8 md:h-8 flex-shrink-0"> {/* Adjust size as needed */}
               <Canvas
-                camera={{ position: [0, 0, 5], fov: 30 }} // Adjust camera for small view
+                camera={{ position: [0, 0, 4.5], fov: 40 }} // Adjust camera for small view
                 className="transition-transform duration-300 group-hover:scale-110"
               >
-                <ambientLight intensity={0.8} /> {/* Adjusted intensity */}
-                <directionalLight position={[2, 3, 5]} intensity={1.5} /> {/* Adjusted light */}
+                <ambientLight intensity={1.2} /> {/* Adjusted intensity */}
+                <directionalLight position={[3, 4, 5]} intensity={2} /> {/* Adjusted light */}
                 <Suspense fallback={null}>
-                  <Dice/>
+                  <Dice isAnimating={true} />
                 </Suspense>
               </Canvas>
         </div>
+      )}
         <a
             href="#"
             className="text-lg font-semibold text-white hover:text-white/80 transition-colors"

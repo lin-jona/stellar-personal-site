@@ -1,9 +1,18 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useMemo, forwardRef, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const Dice = () => {
-  const meshRef = useRef();
+interface DiceMeshProps extends Omit<React.JSX.IntrinsicElements['mesh'], 'position' | 'rotation' | 'quaternion' | 'scale'> {
+  onClick?: (event: any) => void;
+  isAnimating?: boolean; 
+}
+
+const Dice = forwardRef<THREE.Mesh, DiceMeshProps>((props, ref) => {
+  const { onClick, castShadow, isAnimating = true, ...meshSpecificProps } = props; // 默认开启动画
+
+  // 如果外部没有传入 ref，我们内部创建一个，以便 useFrame 使用
+  const internalRef = useRef<THREE.Mesh>(null!);
+  const meshRef = ref || internalRef; // 优先使用外部传入的 ref
 
   // 骰子的尺寸
   const size = 2;
@@ -25,23 +34,29 @@ const Dice = () => {
 
     return faceTextures.map(texturePath => {
       const texture = textureLoader.load(texturePath);
-      return new THREE.MeshBasicMaterial({ map: texture }); // 使用 MeshBasicMaterial 以简化光照
+      return new THREE.MeshStandardMaterial({ map: texture, roughness: 0.6, metalness: 0.2 });
     });
   }, []);
 
   // 动画 (可选)
   useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += delta * 0.5;
-      meshRef.current.rotation.y += delta * 0.3;
+    // 确保 meshRef.current 存在并且 isAnimating 为 true
+    if (meshRef && typeof meshRef !== 'function' && meshRef.current && isAnimating) {
+      meshRef.current.rotation.x += delta * 0.3;
+      meshRef.current.rotation.y += delta * 0.2;
     }
   });
 
 
   return (
-    <mesh ref={meshRef} geometry={geometry} material={materials} >
+    <mesh ref={meshRef}
+    geometry={geometry}
+    material={materials}
+    onClick={onClick} 
+    castShadow={castShadow} >
     </mesh>
   );
-};
+});
 
+Dice.displayName = "Dice";
 export default Dice;
