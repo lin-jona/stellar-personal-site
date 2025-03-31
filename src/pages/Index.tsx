@@ -29,6 +29,8 @@ const Index = () => {
 
   const [showNavbarDice, setShowNavbarDice] = useState(true);
   const [showDiceThrowScene, setShowDiceThrowScene] = useState(false);
+  const [isDiceSceneFading, setIsDiceSceneFading] = useState(false);
+  const diceSceneTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Initialize parallax effect
@@ -170,6 +172,14 @@ const Index = () => {
 
           setShowNavbarDice(false); // 隐藏导航栏骰子
           setShowDiceThrowScene(true); // 显示物理场景
+          // 设置自动关闭定时器
+          diceSceneTimerRef.current = setTimeout(() => {
+            setIsDiceSceneFading(true);
+            setTimeout(() => {
+              setShowDiceThrowScene(false);
+              setIsDiceSceneFading(false);
+            }, 1000); // 淡出动画持续1秒
+          }, 8000); // 8秒后开始关闭
       }
       bottomReachedTimerRef.current = null; // 清理 ref
     }, 800); 
@@ -189,15 +199,38 @@ const Index = () => {
       <Contact />
       {/* 条件渲染 DiceThrowScene */}
       {showDiceThrowScene && (
-        <div style={{
-            position: 'fixed', // 固定定位，覆盖页面
-            bottom: 0,         // 定位到底部
+        <div 
+          style={{
+            position: 'fixed',
+            bottom: 0,
             left: 0,
-            width: '100vw',    // 占据整个视口宽度
-            height: '80vh',   // 占据视口高度的一半
-            zIndex: 30,       // 确保在内容之上，但在导航栏之下
-            overflow: 'hidden' // 防止 Canvas 内容溢出
-           }}>
+            width: '100vw',
+            height: '80vh',
+            zIndex: 30,
+            overflow: 'hidden',
+            opacity: isDiceSceneFading ? 0 : 1,
+            transition: 'opacity 1s ease-out'
+          }}
+        >
+          <button
+            onClick={() => {
+              setIsDiceSceneFading(true);
+              if (diceSceneTimerRef.current) {
+                clearTimeout(diceSceneTimerRef.current);
+              }
+              setTimeout(() => {
+                setShowDiceThrowScene(false);
+                setIsDiceSceneFading(false);
+              }, 1000);
+            }}
+            className="absolute top-4 right-4 bg-accent/80 hover:bg-accent text-white rounded-full p-2 z-40"
+            aria-label="关闭骰子场景"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
           <DiceThrowScene />
         </div>
       )}
