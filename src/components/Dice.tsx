@@ -32,11 +32,23 @@ const Dice = forwardRef<THREE.Mesh, DiceMeshProps>((props, ref) => {
       '/textures/dice/6.png',
     ];
 
-    return faceTextures.map(texturePath => {
+    // 创建所有材质
+    const allMaterials = faceTextures.map(texturePath => {
       const texture = textureLoader.load(texturePath);
       return new THREE.MeshStandardMaterial({ map: texture, roughness: 0.6, metalness: 0.2 });
     });
-  }, []);
+
+    return allMaterials;
+  }, []); // 只在组件挂载时创建材质
+
+  // 使用 useEffect 在组件挂载时随机化材质顺序
+  React.useEffect(() => {
+    // 随机打乱材质顺序
+    for (let i = materials.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [materials[i], materials[j]] = [materials[j], materials[i]];
+    }
+  }, []); // 只在组件挂载时执行一次
 
   // 动画 (可选)
   useFrame((state, delta) => {
