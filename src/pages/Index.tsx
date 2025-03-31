@@ -194,8 +194,8 @@ const Index = () => {
             bottom: 0,         // 定位到底部
             left: 0,
             width: '100vw',    // 占据整个视口宽度
-            height: '50vh',   // 占据视口高度的一半，或者你想要的高度
-            zIndex: 40,       // 确保在内容之上，但在导航栏之下（如果导航栏 z-index=50）
+            height: '80vh',   // 占据视口高度的一半
+            zIndex: 30,       // 确保在内容之上，但在导航栏之下
             overflow: 'hidden' // 防止 Canvas 内容溢出
            }}>
           <DiceThrowScene />
@@ -219,8 +219,8 @@ const Index = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            {/* "No" button - AlertDialogCancel usually handles closing */}
-            <AlertDialogCancel onClick={handleCancel} className="bg-muted text-muted-foreground hover:bg-muted/80 border-0">
+            {/* "No" button */}
+            <AlertDialogCancel onClick={handleCancel} className="bg-muted text-muted-foreground hover:bg-muted/80 border-0" >
               No
             </AlertDialogCancel>
             {/* "Yes" button */}

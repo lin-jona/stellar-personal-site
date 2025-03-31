@@ -29,7 +29,7 @@ const gaodeImageryProvider = new Cesium.UrlTemplateImageryProvider({
 
 const ellipsoidTerrainProvider = new Cesium.EllipsoidTerrainProvider({});
 
-const initialCameraDestination = Cesium.Cartesian3.fromDegrees(105.0, 35.0, 5000000);
+const initialCameraDestination = Cesium.Cartesian3.fromDegrees(110.0, 30.0, 3000000);
 const initialCameraOrientation = {
   heading: Cesium.Math.toRadians(0),
   pitch: Cesium.Math.toRadians(-90),
@@ -41,7 +41,7 @@ const timelineEvents = [
     id: "birth",
     title: "出生地",
     organization: "家乡",
-    location: "重庆",
+    location: "重庆 ",
     date: "1990年",
     description: "出生于重庆市，度过了童年时光。",
     type: "birth",
@@ -52,7 +52,7 @@ const timelineEvents = [
     id: "education1",
     title: "大学本科",
     organization: "清华大学",
-    location: "北京",
+    location: "北京 ",
     date: "2010 - 2014",
     description: "在清华大学计算机系完成本科学业，专注于人工智能和软件工程领域研究。",
     type: "education",
@@ -63,7 +63,7 @@ const timelineEvents = [
     id: "work1",
     title: "初级开发工程师",
     organization: "腾讯",
-    location: "深圳",
+    location: "深圳 ",
     date: "2014 - 2016",
     description: "在腾讯担任初级开发工程师，参与多个项目的开发，积累了丰富的实战经验。",
     type: "work",
@@ -100,7 +100,7 @@ interface AnimationData {
 const Timeline = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isVisible = useScrollAnimation(sectionRef);
-  const [activeEvent, setActiveEvent] = useState(timelineEvents[timelineEvents.length - 1].id);
+  const [activeEvent, setActiveEvent] = useState<string | null>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
   const [viewerReady, setViewerReady] = useState(false);
   // --- State for the moving entity animation ---
@@ -323,15 +323,14 @@ const Timeline = () => {
                   disableDepthTestDistance={Number.POSITIVE_INFINITY}
                 />
                 <LabelGraphics
-                  // 将 event.description 包装在 ConstantProperty 中
-                  text={new Cesium.CallbackProperty(() => event.description, false)}
+                  text={new Cesium.ConstantProperty(activeEvent === event.id ? event.description : event.location)}
                   font= {'10pt monospace'}
                   style = {Cesium.LabelStyle.FILL_AND_OUTLINE}
                   outlineWidth= {2}
                   verticalOrigin= {Cesium.VerticalOrigin.BOTTOM} // Label 放在 Point 上方
                   horizontalOrigin={Cesium.HorizontalOrigin.CENTER}
-                  pixelOffset= {new Cesium.Cartesian2(0, -15)}   // 向上偏移一点，避免遮挡 Point
-                  showBackground= {true}                        // 显示背景，更像 Tooltip
+                  pixelOffset= {new Cesium.Cartesian2(0, -10)}   // 向上偏移一点，避免遮挡 Point
+                  showBackground= {true}
                   backgroundColor= {new Cesium.Color(0.165, 0.165, 0.165, 0.8)} // 背景色
                   backgroundPadding= {new Cesium.Cartesian2(7, 5)} // 背景内边距
                   show = {true}

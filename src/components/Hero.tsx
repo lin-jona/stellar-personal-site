@@ -46,7 +46,7 @@ const Hero = () => {
         className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mb-12 animate-float"
       >
         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-900 to-cyan-600 animate-rotate-earth overflow-hidden">
-          <div className="absolute w-full h-full opacity-30 bg-[url('https://i.imgur.com/6YYM8Al.png')] bg-cover"></div>
+          <div className="absolute w-full h-full opacity-60 bg-[url('/earth.png')] bg-cover"></div>
           <div className="absolute top-[10%] left-[10%] w-[20%] h-[20%] rounded-full bg-gray-100/20 blur-md"></div>
         </div>
         <div className="absolute top-0 left-0 w-full h-full rounded-full shadow-[inset_0_0_40px_rgba(0,0,0,0.8)]"></div>
