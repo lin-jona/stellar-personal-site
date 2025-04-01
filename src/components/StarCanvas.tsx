@@ -145,7 +145,7 @@ const StarCanvas: React.FC = () => {
 
     // 鼠标事件处理
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isMouseOverRef.current) return;
+      // 移除条件判断，让星星始终响应鼠标移动
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = {
         x: e.clientX - rect.left,
@@ -185,7 +185,7 @@ const StarCanvas: React.FC = () => {
 
     // 添加事件监听
     window.addEventListener('resize', updateSize);
-    canvas.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove); // 监听整个窗口的鼠标移动
     canvas.addEventListener('mouseenter', handleMouseEnter);
     canvas.addEventListener('mouseleave', handleMouseLeave);
     window.addEventListener('scroll', handleScroll);
@@ -194,7 +194,7 @@ const StarCanvas: React.FC = () => {
     // 清理
     return () => {
       window.removeEventListener('resize', updateSize);
-      canvas.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handleMouseMove); // 移除window上的事件监听
       canvas.removeEventListener('mouseenter', handleMouseEnter);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('scroll', handleScroll);
@@ -211,7 +211,8 @@ const StarCanvas: React.FC = () => {
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: 3,
+        zIndex: 1,
+        pointerEvents: 'auto',
         background: 'transparent'
       }}
     />
