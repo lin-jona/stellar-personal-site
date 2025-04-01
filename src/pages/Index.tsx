@@ -35,79 +35,8 @@ const Index = () => {
   useEffect(() => {
     // Initialize parallax effect
     const cleanup = initParallaxEffect();
-    
-    // Create a background pattern for the stars if needed
-    const createStars = () => {
-      const starCount = 50;
-      const container = document.querySelector(".bg-stars");
-      if (!container) return;
-      // Clear existing stars if any to prevent duplicates on HMR
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
-    }
-      
-      const fragment = document.createDocumentFragment();
-      
-      for (let i = 0; i < starCount; i++) {
-        const star = document.createElement("div");
-        star.className = "absolute rounded-full bg-white";
-        
-        // Random position
-        star.style.top = `${Math.random() * 100}%`;
-        star.style.left = `${Math.random() * 100}%`;
-        
-        // Random size
-        const size = Math.random() * 1.5 + 0.5;
-        star.style.width = `${size}px`;
-        star.style.height = `${size}px`;
-        
-        // Random opacity
-        star.style.opacity = `${Math.random() * 0.6 + 0.2}`;
-        star.style.animation = `twinkle ${Math.random() * 5 + 3}s infinite alternate`;
-        fragment.appendChild(star);
-      }
-      
-      container.appendChild(fragment);
-
-      // --- 检查并添加 @keyframes ---
-      let twinkleExists = false;
-      try {
-        // 确保至少有一个样式表
-        if (document.styleSheets.length > 0) {
-            const styleSheet = document.styleSheets[0];
-            // 遍历规则查找 keyframes
-            for (let i = 0; i < styleSheet.cssRules.length; i++) {
-                const rule = styleSheet.cssRules[i];
-                // CSSRule.KEYFRAMES_RULE 的值是 7
-                if (rule.type === CSSRule.KEYFRAMES_RULE && (rule as CSSKeyframesRule).name === 'twinkle') {
-                    twinkleExists = true;
-                    break; // 找到了就停止遍历
-                }
-            }
-
-            // 如果规则不存在，则插入
-            if (!twinkleExists) {
-                styleSheet.insertRule(`
-                  @keyframes twinkle {
-                    0% { opacity: ${Math.random() * 0.4 + 0.1}; }
-                    100% { opacity: ${Math.random() * 0.5 + 0.5}; }
-                  }`, styleSheet.cssRules.length);
-                 console.log("Inserted @keyframes twinkle"); // 调试信息
-            }
-        } else {
-             console.warn("No stylesheets found to insert keyframes.");
-        }
-      } catch (e) {
-        // 访问 cssRules 可能会因为跨域样式表等原因失败
-        console.warn("Could not access or modify CSS rules, possibly due to cross-origin restrictions:", e);
-      }
-      // --- 结束检查并添加 @keyframes ---
-    };
-    
-    createStars();
-  
     return () => {
-      cleanup; // 清理视差效果
+      cleanup(); // 修复：添加括号调用清理函数
     };
   }, []);
 
@@ -164,7 +93,7 @@ const Index = () => {
    // --- Handlers for Dialog Buttons ---
    const handleAccept = () => {
     console.log("User clicked Yes!");
-    console.log('bottomReachedTimerRef',bottomReachedTimerRef.value)
+    console.log('bottomReachedTimerRef',bottomReachedTimerRef.current)
     bottomReachedTimerRef.current = setTimeout(() => {
       // Double-check if still at bottom when timer fires
       if (isAtBottomRef.current && showNavbarDice) {
@@ -190,6 +119,17 @@ const Index = () => {
     setIsPopupOpen(false); // Close the dialog
   };
 
+  const handleCloseDice = () => {
+    setIsDiceSceneFading(true);
+    if (diceSceneTimerRef.current) {
+      clearTimeout(diceSceneTimerRef.current);
+    }
+    setTimeout(() => {
+      setShowDiceThrowScene(false);
+      setIsDiceSceneFading(false);
+    }, 1000);
+  };
+
   return (
     <Layout showNavbarDice={showNavbarDice}>
       <Hero />
@@ -213,16 +153,7 @@ const Index = () => {
           }}
         >
           <button
-            onClick={() => {
-              setIsDiceSceneFading(true);
-              if (diceSceneTimerRef.current) {
-                clearTimeout(diceSceneTimerRef.current);
-              }
-              setTimeout(() => {
-                setShowDiceThrowScene(false);
-                setIsDiceSceneFading(false);
-              }, 1000);
-            }}
+            onClick={handleCloseDice}
             className="absolute top-4 right-4 bg-accent/80 hover:bg-accent text-white rounded-full p-2 z-40"
             aria-label="关闭骰子场景"
           >

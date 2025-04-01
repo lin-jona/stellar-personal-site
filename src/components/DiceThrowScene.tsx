@@ -1,53 +1,167 @@
-import React, { useRef, Suspense } from 'react';
+import React, { useRef, Suspense, useCallback, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Physics, usePlane, useBox } from '@react-three/cannon';
-import Dice from './Dice'; // 引入你的骰子组件
+import Dice from './Dice';
+import { useWindowBounds } from '../hooks/useWindowBounds';
 
-// 地面组件
-function Ground(props) {
-  // usePlane 创建一个物理平面
-  // rotation 使其水平
-  const [ref] = usePlane(() => ({ rotation: [-Math.PI / 2, 0, 0], ...props }), useRef());
+interface WallsProps {
+  bounds: {
+    left: number;
+    right: number;
+    front: number;
+    back: number;
+  };
+}
+
+// 物理世界边界组件
+function Walls({ bounds }: WallsProps) {
+  // 地面
+  const [groundRef] = usePlane(
+    () => ({ 
+      rotation: [-Math.PI / 2, 0, 0],
+      position: [0, -0.5, 0]
+    }),
+    useRef()
+  );
+
+  // 左墙
+  const [leftWallRef] = usePlane(
+    () => ({
+      rotation: [0, Math.PI / 2, 0],
+      position: [bounds.left, 2, 0]
+    }),
+    useRef()
+  );
+
+  // 右墙
+  const [rightWallRef] = usePlane(
+    () => ({
+      rotation: [0, -Math.PI / 2, 0],
+      position: [bounds.right, 2, 0]
+    }),
+    useRef()
+  );
+
+  // 前墙
+  const [frontWallRef] = usePlane(
+    () => ({
+      rotation: [0, 0, 0],
+      position: [0, 2, bounds.front]
+    }),
+    useRef()
+  );
+
+  // 后墙
+  const [backWallRef] = usePlane(
+    () => ({
+      rotation: [0, Math.PI, 0],
+      position: [0, 2, bounds.back]
+    }),
+    useRef()
+  );
+
   return (
-    <mesh ref={ref} visible={false}>
-      <planeGeometry args={[100, 100]} />
-    </mesh>
+    <>
+      <mesh ref={groundRef} visible={false}>
+        <planeGeometry args={[30, 30]} />
+      </mesh>
+      <mesh ref={leftWallRef} visible={false}>
+        <planeGeometry args={[10, 10]} />
+      </mesh>
+      <mesh ref={rightWallRef} visible={false}>
+        <planeGeometry args={[10, 10]} />
+      </mesh>
+      <mesh ref={frontWallRef} visible={false}>
+        <planeGeometry args={[30, 10]} />
+      </mesh>
+      <mesh ref={backWallRef} visible={false}>
+        <planeGeometry args={[30, 10]} />
+      </mesh>
+    </>
   );
 }
 
-// 包含物理特性的骰子组件
-function PhysicsDice(props) {
-  // useBox 创建一个物理立方体
-  const [ref, api] = useBox(() => ({
-    mass: 0.2, // 增加骰子的质量，使下落更有重量感
-    position: props.position || [0, 5, 0], // 初始位置，从上方落下
-    args: [2, 2, 2], // 物理形状的尺寸，应与 Dice 组件视觉尺寸匹配
-    friction: 0.15, // 略微增加摩擦力，使骰子在地面上滚动更自然
-    restitution: 0.3, // 降低弹性，减少过度弹跳
-    allowSleep: true, // 允许物体在静止时"睡眠"以提高性能
-    ...props // 允许传递其他 cannon 属性
-  }), useRef());
-  
-  // 添加自动投掷效果
-  React.useEffect(() => {
-    // 添加一个短暂延迟，确保物理引擎已初始化
-    const timer = setTimeout(() => {
-      throwDice();
-    }, 300); // 300ms延迟
-    
-    return () => clearTimeout(timer); // 清理函数
-  }, []); // 仅在组件挂载时执行一次
+interface PhysicsDiceProps {
+  position?: [number, number, number];
+}
 
-  // 点击骰子时施加一个随机的力和扭矩，模拟投掷
-  const throwDice = () => {
+// 基础骰子组件
+function BaseDice(props: PhysicsDiceProps) {
+  const [ref, api] = useBox(() => ({
+    mass: 0.3, // 略微增加质量，使运动更稳定
+    position: props.position || [0, 5, 0] as [number, number, number],
+    args: [2, 2, 2],
+    friction: 0.2, // 增加摩擦力，减少滑动
+    restitution: 0.2, // 降低弹性，减少弹跳
+    allowSleep: true,
+    sleepSpeedLimit: 0.2, // 更快进入休眠状态
+    sleepTimeLimit: 0.5,
+    ...props
+  }), useRef());
+
+  // 使用ref跟踪骰子的状态
+  const diceState = useRef({
+    isResting: false,
+    lastPosition: [0, 0, 0],
+    restTimeout: null as NodeJS.Timeout | null,
+  });
+  
+  // 检测骰子是否静止的函数
+  const checkIfResting = useCallback((position: [number, number, number]) => {
+    const threshold = 0.01; // 移动阈值
+    const { lastPosition } = diceState.current;
+    
+    const isNearlyStill = Math.abs(position[0] - lastPosition[0]) < threshold &&
+                         Math.abs(position[1] - lastPosition[1]) < threshold &&
+                         Math.abs(position[2] - lastPosition[2]) < threshold;
+
+    if (isNearlyStill && !diceState.current.isResting) {
+      if (diceState.current.restTimeout === null) {
+        diceState.current.restTimeout = setTimeout(() => {
+          diceState.current.isResting = true;
+          api.sleep(); // 让物理引擎休眠
+        }, 1000); // 1秒后如果还是静止的，就进入休眠
+      }
+    } else if (!isNearlyStill) {
+      if (diceState.current.restTimeout) {
+        clearTimeout(diceState.current.restTimeout);
+        diceState.current.restTimeout = null;
+      }
+      diceState.current.isResting = false;
+    }
+
+    diceState.current.lastPosition = position;
+  }, [api]);
+
+  // 监听位置变化
+  useEffect(() => {
+    const unsubscribe = api.position.subscribe((pos) => {
+      checkIfResting(pos as [number, number, number]);
+    });
+    return () => {
+      unsubscribe();
+      if (diceState.current.restTimeout) {
+        clearTimeout(diceState.current.restTimeout);
+      }
+    };
+  }, [api.position, checkIfResting]);
+
+  // 自动投掷效果
+  useEffect(() => {
+    const timer = setTimeout(throwDice, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 优化的投掷函数
+  const throwDice = useCallback(() => {
     // 唤醒物体（如果它正在睡眠）
     api.wakeUp();
     
-    // 重置位置到略带随机的初始位置
+    // 重置位置时使用更小的随机偏移
     const randomOffset: [number, number, number] = [
-      (Math.random() - 0.5) * 2,  // X轴随机偏移
-      0,                          // Y轴保持不变
-      (Math.random() - 0.5) * 2   // Z轴随机偏移
+      (Math.random() - 0.5) * 1,  // 减小随机偏移范围
+      0,
+      (Math.random() - 0.5) * 1
     ];
     
     // 重置到初始高度（带随机偏移）
@@ -57,12 +171,12 @@ function PhysicsDice(props) {
       props.position[2] + randomOffset[2]
     );
 
-    // 随机力量和方向 - 主要向下
-    const impulseStrength = 5 + Math.random() * 5; // 增加力量
+    // 使用更温和的力量设置
+    const impulseStrength = 3 + Math.random() * 2; // 减小力量范围
     const impulseDirection: [number, number, number] = [
-      (Math.random() - 0.5) * 3, // X 方向随机，增加范围
-      -2.5,                      // 主要向下，增加下落的随机性
-      (Math.random() - 0.5) * 3  // Z 方向随机，增加范围
+      (Math.random() - 0.5) * 1.5, // 减小水平方向的随机性
+      -2,                          // 保持向下的力量稳定
+      (Math.random() - 0.5) * 1.5  // 减小水平方向的随机性
     ];
     const impulse: [number, number, number] = [
       impulseDirection[0] * impulseStrength * 0.1,
@@ -70,19 +184,19 @@ function PhysicsDice(props) {
       impulseDirection[2] * impulseStrength * 0.1
     ];
 
-    // 显著增加随机旋转力（扭矩）
-    const torqueStrength = 10 + Math.random() * 15; // 大幅增加扭矩强度
+    // 使用更温和的扭矩设置
+    const torqueStrength = 5 + Math.random() * 8; // 减小扭矩强度
     const torque: [number, number, number] = [
-      (Math.random() - 0.5) * torqueStrength * 1.5, // X轴扭矩增强
-      (Math.random() - 0.5) * torqueStrength,       // Y轴扭矩
-      (Math.random() - 0.5) * torqueStrength * 1.2  // Z轴扭矩增强
+      (Math.random() - 0.5) * torqueStrength,
+      (Math.random() - 0.5) * torqueStrength,
+      (Math.random() - 0.5) * torqueStrength
     ];
 
     // 应用冲量（在物体重心）
     api.applyImpulse(impulse, [0, 0, 0] as [number, number, number]);
     // 应用扭矩
     api.applyTorque(torque);
-  };
+  }, [api, props.position]);
 
   // 将物理 ref 传递给你的视觉 Dice 组件
   // 当点击 mesh 时，调用 throwDice
@@ -92,9 +206,15 @@ function PhysicsDice(props) {
 }
 
 
+// 优化的物理骰子组件
+const PhysicsDice = React.memo(BaseDice);
+
+interface DiceThrowSceneProps {}
+
 // 主场景组件
-function DiceThrowScene() {
-  const startPosition = [0, 9, 0];
+function DiceThrowScene(props: DiceThrowSceneProps) {
+  const { worldBounds } = useWindowBounds();
+  const startPosition: [number, number, number] = [0, 7, 0]; // 降低起始高度以减少出界可能
 
   return (
     <div style={{ height: '100vh', width: '100vw' }}>
@@ -116,12 +236,14 @@ function DiceThrowScene() {
         <pointLight position={[-10, -10, -10]} intensity={0.5} />
 
         {/* 物理世界 */}
-        <Physics gravity={[0, -9.82, 0]}> {/* 设置重力，Y轴向下 */}
-          <Suspense fallback={null}> {/* 用于异步加载模型/纹理 */}
-            {/* 地面 */}
-            <Ground position={[0, -0.5, 0]} />
-
-            {/* 骰子 - 设置初始位置 */}
+        <Physics gravity={[0, -9.82, 0]}
+          defaultContactMaterial={{
+            friction: 0.2,
+            restitution: 0.3
+          }}
+        >
+          <Suspense fallback={null}>
+            <Walls bounds={worldBounds} />
             <PhysicsDice position={startPosition} />
           </Suspense>
         </Physics>
@@ -130,4 +252,4 @@ function DiceThrowScene() {
   );
 }
 
-export default DiceThrowScene;
+export default React.memo(DiceThrowScene);

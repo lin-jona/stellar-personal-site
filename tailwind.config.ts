@@ -124,7 +124,6 @@ export default {
 				'breathe': 'breathe 6s ease-in-out infinite'
 			},
 			backgroundImage: {
-				'stars': 'url("/stars-bg.png")',
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 				'noise': 'url("/noise.svg")',
 				'grid': 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)'
