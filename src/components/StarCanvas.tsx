@@ -145,7 +145,6 @@ const StarCanvas: React.FC = () => {
 
     // 鼠标事件处理
     const handleMouseMove = (e: MouseEvent) => {
-      // 移除条件判断，让星星始终响应鼠标移动
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = {
         x: e.clientX - rect.left,

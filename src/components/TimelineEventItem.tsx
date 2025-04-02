@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Calendar, MapPin, GraduationCap, Briefcase } from 'lucide-react';
-import * as Cesium from 'cesium'; // 只需要类型，如果不用 Cesium 类型可以去掉
+import * as Cesium from 'cesium';
 
 // 定义 Event 类型 (可以从 Timeline 组件共享或重新定义)
 interface TimelineEvent {
