@@ -1,98 +1,58 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Calendar, MapPin, GraduationCap, Briefcase } from 'lucide-react';
-import * as Cesium from 'cesium';
-
-// 定义 Event 类型 (可以从 Timeline 组件共享或重新定义)
-interface TimelineEvent {
-  id: string;
-  title: string;
-  organization: string;
-  location: string;
-  date: string;
-  description: string;
-  type: 'birth' | 'education' | 'work';
-  coordinates: { lat: number; lng: number; height: number };
-  color: Cesium.Color; // 或者使用 string 类型存储 CSS 颜色值
-}
+import { TimelineEvent } from '@/data/timelineData';
+import { useParallaxEffect } from '@/hooks/useParallaxEffect';
 
 interface TimelineEventItemProps {
   event: TimelineEvent;
   isActive: boolean;
   onClick: (id: string) => void;
-  parallaxFactor?: number; // 视差因子，可选
+  parallaxFactor?: number;
 }
 
-const TimelineEventItem: React.FC<TimelineEventItemProps> = ({
+// 获取事件类型对应的图标组件
+const getEventIcon = (type: TimelineEvent['type'], color: string) => {
+  switch (type) {
+    case 'education':
+      return <GraduationCap size={20} style={{ color }} />;
+    case 'work':
+      return <Briefcase size={20} style={{ color }} />;
+    default:
+      return <MapPin size={20} style={{ color }} />;
+  }
+};
+
+const TimelineEventItem: React.FC<TimelineEventItemProps> = React.memo(({
   event,
   isActive,
   onClick,
-  parallaxFactor = 0.1, // 默认视差因子
+  parallaxFactor = 0.1,
 }) => {
   const itemRef = useRef<HTMLDivElement>(null);
-  const [translateY, setTranslateY] = useState(0);
-
-  useEffect(() => {
-    // --- 视差滚动逻辑 ---
-    let animationFrameId: number | null = null;
-
-    const handleScroll = () => {
-      if (!itemRef.current) return;
-
-      cancelAnimationFrame(animationFrameId!); // 取消之前的帧
-
-      animationFrameId = requestAnimationFrame(() => {
-        const element = itemRef.current;
-        const rect = element.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-
-        // 计算元素中心点相对于视口中心点的位置
-        const elementCenterY = rect.top + rect.height / 2;
-        const viewportCenterY = windowHeight / 2;
-        const relativeOffset = elementCenterY - viewportCenterY;
-
-        // 根据相对偏移和视差因子计算 translateY
-        const calculatedTranslateY = -relativeOffset * parallaxFactor;
-
-        setTranslateY(calculatedTranslateY);
-      });
-    };
-
-    // 初始计算
-    handleScroll();
-
-    // 添加滚动监听
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // 清理函数
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [parallaxFactor]); // 依赖视差因子
-
-  // 将 Cesium Color 转换为 CSS 颜色字符串的辅助函数
-  const getCssColor = (color: Cesium.Color, alpha: number = 1): string => {
-    return `rgba(${Math.round(color.red * 255)}, ${Math.round(color.green * 255)}, ${Math.round(color.blue * 255)}, ${alpha})`;
-  };
-
-  const eventColorCss = getCssColor(event.color);
-  const eventColorCssAlpha = (alpha: number) => getCssColor(event.color, alpha);
+  
+  // 使用自定义 Hook 处理视差效果
+  const translateY = useParallaxEffect(itemRef, parallaxFactor);
+  
+  // 计算 CSS 颜色和带透明度的颜色
+  const eventColorCss = useMemo(() => event.color.cssString, [event.color]);
+  const eventColorWithAlpha = useMemo(() => {
+    return `rgba(${Math.round(event.color.red * 255)}, ${Math.round(event.color.green * 255)}, ${Math.round(event.color.blue * 255)}, 0.1)`;
+  }, [event.color]);
+  
+  // 获取事件图标
+  const eventIcon = useMemo(() => {
+    return getEventIcon(event.type, eventColorCss);
+  }, [event.type, eventColorCss]);
 
   return (
     <div
       ref={itemRef}
-      key={event.id} // key 最好放在 map 的地方，但这里保留以防万一
       className={`relative transition-opacity duration-300 cursor-pointer timeline-list-item ${
         isActive ? 'opacity-100' : 'opacity-70 hover:opacity-100'
       }`}
       onClick={() => onClick(event.id)}
       style={{
-        // 应用视差变换
         transform: `translateY(${translateY}px)`,
-        // 可选：添加平滑过渡，但注意性能影响
-        // transition: 'transform 0.1s linear, opacity 0.3s ease-in-out',
       }}
     >
       {/* Timeline Node */}
@@ -100,10 +60,10 @@ const TimelineEventItem: React.FC<TimelineEventItemProps> = ({
         className={`absolute -left-[42px] mt-1.5 w-5 h-5 rounded-full border-4 transition-all duration-300`}
         style={{
           borderColor: eventColorCss,
-          backgroundColor: isActive ? eventColorCss : 'var(--background)', // 使用 CSS 变量或具体背景色
+          backgroundColor: isActive ? eventColorCss : 'var(--background)',
           transform: isActive ? 'scale(1.1)' : 'scale(1.0)',
         }}
-      ></div>
+      />
 
       {/* Timeline Card */}
       <div
@@ -111,7 +71,7 @@ const TimelineEventItem: React.FC<TimelineEventItemProps> = ({
           isActive ? 'bg-white/10 shadow-lg' : ''
         }`}
         style={{
-          boxShadow: isActive ? `0 6px 20px ${eventColorCssAlpha(0.25)}` : 'none',
+          boxShadow: isActive ? `0 6px 20px rgba(${Math.round(event.color.red * 255)}, ${Math.round(event.color.green * 255)}, ${Math.round(event.color.blue * 255)}, 0.25)` : 'none',
         }}
       >
         {/* Date and Location */}
@@ -123,27 +83,25 @@ const TimelineEventItem: React.FC<TimelineEventItemProps> = ({
             <MapPin size={14} className="mr-1.5" />{event.location}
           </span>
         </div>
+        
         {/* Title and Icon */}
         <div className="flex items-start gap-3 mb-3">
-          <div className="p-2 rounded-full mt-0.5" style={{ backgroundColor: eventColorCssAlpha(0.1) }}>
-            {event.type === 'education' ? (
-              <GraduationCap size={20} style={{ color: eventColorCss }} />
-            ) : event.type === 'work' ? (
-              <Briefcase size={20} style={{ color: eventColorCss }} />
-            ) : (
-              <MapPin size={20} style={{ color: eventColorCss }} />
-            )}
+          <div className="p-2 rounded-full mt-0.5" style={{ backgroundColor: eventColorWithAlpha }}>
+            {eventIcon}
           </div>
           <div>
             <h3 className="text-lg font-medium">{event.title}</h3>
             <p className="text-sm text-white/70 -mt-0.5">{event.organization}</p>
           </div>
         </div>
+        
         {/* Description */}
         <p className="text-sm text-white/80 leading-relaxed">{event.description}</p>
       </div>
     </div>
   );
-};
+});
+
+TimelineEventItem.displayName = 'TimelineEventItem';
 
 export default TimelineEventItem;
