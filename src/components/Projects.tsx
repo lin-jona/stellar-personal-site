@@ -29,10 +29,10 @@ const Projects = () => {
                 : "opacity-0"
             }`}
           >
-            <div className="relative h-48 overflow-hidden">
+            <div className="relative h-48 overflow-hidden flex items-center justify-center">
               <img
                 src={project.image}
-                alt={project.title}
+                alt={project.imageAlt}
                 className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                 loading="lazy"
               />

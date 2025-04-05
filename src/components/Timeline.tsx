@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { useRef, useState, useCallback, useMemo, lazy, Suspense, useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import * as Cesium from "cesium";
 import {
@@ -20,14 +20,47 @@ import { timelineEvents, routes, TimelineEvent } from "@/data/timelineData";
 // 使用 React.lazy 延迟加载 TimelineEventItem 组件
 const TimelineEventItem = lazy(() => import('./TimelineEventItem'));
 
+// 屏幕类型检测hook
+const useScreenType = () => {
+  const [screenType, setScreenType] = useState(() => {
+    const width = window.innerWidth;
+    if (width < 768) return 'mobile';
+    if (width < 1024) return 'tablet';
+    return 'desktop';
+  });
+  
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 768) setScreenType('mobile');
+      else if (width < 1024) setScreenType('tablet');
+      else setScreenType('desktop');
+    };
+    
+    // 只在窗口大小变化时触发，而不是每次渲染
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  return screenType;
+};
+
 // 组件
 const Timeline = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isVisible = useScrollAnimation(sectionRef);
   const [activeEvent, setActiveEvent] = useState<string | null>(null);
+  const screenType = useScreenType();
   
   // 使用自定义 Hook 管理 Cesium Viewer
   const { viewerRef, viewerReady, setViewerRef } = useCesiumViewer();
+  
+  // 使用useMemo缓存字符数配置，避免重复计算
+  const charsConfig = useMemo(() => ({
+    mobile: 16,
+    tablet: 25,
+    desktop: 35
+  }), []);
   
   // 使用自定义 Hook 管理路径动画
   const { activePathAnimation, setActivePathAnimation, createPathAnimation } = usePathAnimation(viewerRef, viewerReady);
@@ -106,12 +139,20 @@ const Timeline = () => {
   }, [eventIcons]);
 
   // 预处理事件描述
-  const formatDescription = (text: string): string => {
-    if (text.length <= 20) return text;
+  const formatDescription = useCallback((text: string): string => {
+    if (!text || text.length <= charsConfig[screenType]) return text;
     
-    // 每20个字符添加一个换行符
-    return text.match(/.{1,20}/g)?.join('\n') || text;
-  };
+    // 使用预设的字符数，根据屏幕类型选择
+    const charsPerLine = charsConfig[screenType];
+    
+    // 简单的文本分行，避免复杂计算
+    const lines = [];
+    for (let i = 0; i < text.length; i += charsPerLine) {
+      lines.push(text.substring(i, i + charsPerLine));
+    }
+    
+    return lines.join('\n');
+  }, [screenType, charsConfig]);
 
   return (
     <section id="timeline" ref={sectionRef} className="section">
@@ -195,14 +236,14 @@ const Timeline = () => {
                 />
                 <LabelGraphics
                   text={activeEvent === event.id ? formatDescription(event.description) : event.location}
-                  font={'10pt monospace'}
+                  font={'bold 10pt monospace'}
                   style={Cesium.LabelStyle.FILL_AND_OUTLINE}
                   outlineWidth={2}
                   verticalOrigin={Cesium.VerticalOrigin.BOTTOM}
                   horizontalOrigin={Cesium.HorizontalOrigin.CENTER}
                   pixelOffset={new Cesium.Cartesian2(0, -10)}
                   showBackground={true}
-                  backgroundColor={new Cesium.Color(0.165, 0.165, 0.165, 0.8)}
+                  backgroundColor={new Cesium.Color(0.1, 0.1, 0.15, 0.9)}
                   backgroundPadding={new Cesium.Cartesian2(7, 5)}
                   show={true}
                   disableDepthTestDistance={Number.POSITIVE_INFINITY}

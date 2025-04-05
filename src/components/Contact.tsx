@@ -154,24 +154,24 @@ const Contact = () => {
             
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                <div className="min-w-10 w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
                   <Mail size={20} className="text-accent" />
                 </div>
-                <div>
+                <div className="overflow-hidden">
                   <h4 className="text-sm text-white/50">Email</h4>
-                  <a href="mailto:penghulin2794@outlook.com" className="hover:text-accent transition-colors">
+                  <a href="mailto:penghulin2794@outlook.com" className="hover:text-accent transition-colors block break-all">
                     penghulin2794@outlook.com
                   </a>
                 </div>
               </div>
               
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                <div className="min-w-10 w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
                   <Github size={20} className="text-accent" />
                 </div>
-                <div>
+                <div className="overflow-hidden">
                   <h4 className="text-sm text-white/50">GitHub</h4>
-                  <a href="https://github.com/lin-jona" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">
+                  <a href="https://github.com/lin-jona" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors block break-all">
                     github.com/lin-jona
                   </a>
                 </div>
