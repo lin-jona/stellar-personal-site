@@ -2,41 +2,9 @@
 import { useRef } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { ExternalLink, Github } from "lucide-react";
+import { projectsData } from "@/data/projectData";
 
-const projects = [
-  {
-    title: "E-Commerce Platform",
-    description: "A full-stack e-commerce solution with payment integration, user authentication, and product management.",
-    techStack: ["React", "Node.js", "MongoDB", "Stripe"],
-    image: "https://placehold.co/600x400/222/eee?text=E-Commerce+Platform",
-    github: "#",
-    demo: "#",
-  },
-  {
-    title: "Task Management App",
-    description: "A productivity application for managing tasks with real-time updates, notifications, and team collaboration.",
-    techStack: ["Vue.js", "Firebase", "Tailwind CSS"],
-    image: "https://placehold.co/600x400/222/eee?text=Task+Management",
-    github: "#",
-    demo: "#",
-  },
-  {
-    title: "Weather Dashboard",
-    description: "An interactive weather dashboard with location-based forecasts, historical data, and visual representations.",
-    techStack: ["JavaScript", "OpenWeather API", "Chart.js"],
-    image: "https://placehold.co/600x400/222/eee?text=Weather+Dashboard",
-    github: "#",
-    demo: "#",
-  },
-  {
-    title: "Social Media Analytics",
-    description: "A social media analytics platform that tracks engagement metrics and provides actionable insights.",
-    techStack: ["React", "Express.js", "PostgreSQL", "D3.js"],
-    image: "https://placehold.co/600x400/222/eee?text=Social+Media+Analytics",
-    github: "#",
-    demo: "#",
-  },
-];
+const projects = projectsData;
 
 const Projects = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -45,11 +13,9 @@ const Projects = () => {
   return (
     <section id="projects" ref={sectionRef} className="section bg-space-light">
       <div className={isVisible ? "animate-fade-in-up" : "opacity-0"}>
-        <h3 className="text-xl font-medium text-accent mb-2">My Work</h3>
-        <h2 className="section-title">Featured Projects</h2>
+        <h2 className="section-title">我的项目</h2>
         <p className="section-subtitle">
-          Here are some of my recent projects that showcase my skills and expertise.
-          Each project represents a unique challenge and solution.
+          在我的职业生涯中，我有幸参与了多个项目。每一个项目都如同一次冒险，带来了独特的挑战和学习机会。虽然途中遇到了不少障碍，但通过团队的协作和个人的努力，我最终找到了解决方案。
         </p>
       </div>
 
@@ -83,24 +49,6 @@ const Projects = () => {
                     {tech}
                   </span>
                 ))}
-              </div>
-              <div className="flex space-x-4 pt-2">
-                <a
-                  href={project.github}
-                  className="flex items-center text-white/70 hover:text-white transition-colors"
-                  aria-label={`View ${project.title} source code`}
-                >
-                  <Github size={18} className="mr-1" />
-                  <span>Code</span>
-                </a>
-                <a
-                  href={project.demo}
-                  className="flex items-center text-white/70 hover:text-white transition-colors"
-                  aria-label={`View ${project.title} live demo`}
-                >
-                  <ExternalLink size={18} className="mr-1" />
-                  <span>Demo</span>
-                </a>
               </div>
             </div>
           </div>

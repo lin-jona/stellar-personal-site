@@ -41,10 +41,9 @@ const Contact = () => {
   return (
     <section id="contact" ref={sectionRef} className="section">
       <div className={isVisible ? "animate-fade-in-up" : "opacity-0"}>
-        <h3 className="text-xl font-medium text-accent mb-2">Get In Touch</h3>
-        <h2 className="section-title">Contact Me</h2>
+        <h2 className="section-title">联系我</h2>
         <p className="section-subtitle">
-          Have a question or want to work together? Feel free to reach out.
+          如果您有任何问题或希望合作，请随时联系我。
         </p>
       </div>
 
@@ -54,7 +53,7 @@ const Contact = () => {
             isVisible ? "animate-fade-in-up" : "opacity-0"
           }`}
         >
-          <h3 className="text-xl font-medium mb-6">Send Me a Message</h3>
+          <h3 className="text-xl font-medium mb-6">留言</h3>
           
           {submitted ? (
             <div className="glass p-8 rounded-xl text-center">
@@ -70,7 +69,7 @@ const Contact = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label htmlFor="name" className="text-sm text-white/70 block">
-                  Name
+                  昵称
                 </label>
                 <input
                   type="text"
@@ -80,13 +79,13 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   className="w-full glass bg-white/5 text-white border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-accent/50 focus:outline-none transition-all"
-                  placeholder="Your name"
+                  placeholder="您的昵称"
                 />
               </div>
               
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm text-white/70 block">
-                  Email
+                  邮箱
                 </label>
                 <input
                   type="email"
@@ -96,13 +95,13 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   className="w-full glass bg-white/5 text-white border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-accent/50 focus:outline-none transition-all"
-                  placeholder="Your email"
+                  placeholder="您的邮箱"
                 />
               </div>
               
               <div className="space-y-2">
                 <label htmlFor="message" className="text-sm text-white/70 block">
-                  Message
+                  留言
                 </label>
                 <textarea
                   id="message"
@@ -112,7 +111,7 @@ const Contact = () => {
                   required
                   rows={5}
                   className="w-full glass bg-white/5 text-white border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-accent/50 focus:outline-none resize-none transition-all"
-                  placeholder="Your message"
+                  placeholder="您的留言"
                 ></textarea>
               </div>
               
@@ -146,11 +145,11 @@ const Contact = () => {
             isVisible ? "animate-fade-in-up animate-delay-200" : "opacity-0"
           }`}
         >
-          <h3 className="text-xl font-medium mb-6">Connect With Me</h3>
+          <h3 className="text-xl font-medium mb-6">与我取得联系</h3>
           
           <div className="glass rounded-xl p-8 mb-8">
             <p className="text-white/80 mb-6">
-              I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
+            我很乐意听取您的想法或讨论新的项目、创意或机会。请随时与我分享更多细节，期待您的留言！
             </p>
             
             <div className="space-y-4">
@@ -160,8 +159,8 @@ const Contact = () => {
                 </div>
                 <div>
                   <h4 className="text-sm text-white/50">Email</h4>
-                  <a href="mailto:contact@example.com" className="hover:text-accent transition-colors">
-                    contact@example.com
+                  <a href="mailto:penghulin2794@outlook.com" className="hover:text-accent transition-colors">
+                    penghulin2794@outlook.com
                   </a>
                 </div>
               </div>
@@ -172,20 +171,8 @@ const Contact = () => {
                 </div>
                 <div>
                   <h4 className="text-sm text-white/50">GitHub</h4>
-                  <a href="https://github.com/username" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">
-                    github.com/username
-                  </a>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Linkedin size={20} className="text-accent" />
-                </div>
-                <div>
-                  <h4 className="text-sm text-white/50">LinkedIn</h4>
-                  <a href="https://linkedin.com/in/username" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">
-                    linkedin.com/in/username
+                  <a href="https://github.com/lin-jona" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">
+                    github.com/lin-jona
                   </a>
                 </div>
               </div>
@@ -193,9 +180,9 @@ const Contact = () => {
           </div>
           
           <div className="glass rounded-xl p-8">
-            <h4 className="text-lg font-medium mb-4">Let's Work Together</h4>
+            <h4 className="text-lg font-medium mb-4">期待一起合作</h4>
             <p className="text-white/80">
-              Whether you have a question about a project, need a developer for your next big idea, or just want to say hello, I'll try my best to get back to you!
+              无论您是否有关于项目的问题，或需要开发人员来实现您的下一个创意，或者只是想打声招呼，我会尽力回复您！
             </p>
           </div>
         </div>

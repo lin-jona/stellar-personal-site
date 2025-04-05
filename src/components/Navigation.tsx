@@ -6,11 +6,11 @@ import { Canvas } from '@react-three/fiber';
 import Dice from '@/components/Dice';
 
 const navLinks = [
-  { name: "About Me", href: "#about" },
-  { name: "Skills", href: "#skills" },
-  { name: "Projects", href: "#projects" },
-  { name: "Timeline", href: "#timeline" },
-  { name: "Contact", href: "#contact" },
+  { name: "关于我", href: "#about" },
+  // { name: "技能", href: "#skills" },
+  { name: "我的项目", href: "#projects" },
+  { name: "个人经历", href: "#timeline" },
+  { name: "联系我", href: "#contact" },
 ];
 
 interface NavigationProps {

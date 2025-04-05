@@ -105,6 +105,14 @@ const Timeline = () => {
     return eventIcons.find(item => item.id === eventId)?.icon || '';
   }, [eventIcons]);
 
+  // 预处理事件描述
+  const formatDescription = (text: string): string => {
+    if (text.length <= 20) return text;
+    
+    // 每20个字符添加一个换行符
+    return text.match(/.{1,20}/g)?.join('\n') || text;
+  };
+
   return (
     <section id="timeline" ref={sectionRef} className="section">
       {/* 标题和副标题 */}
@@ -186,7 +194,7 @@ const Timeline = () => {
                   disableDepthTestDistance={Number.POSITIVE_INFINITY}
                 />
                 <LabelGraphics
-                  text={activeEvent === event.id ? event.description : event.location}
+                  text={activeEvent === event.id ? formatDescription(event.description) : event.location}
                   font={'10pt monospace'}
                   style={Cesium.LabelStyle.FILL_AND_OUTLINE}
                   outlineWidth={2}

@@ -136,16 +136,18 @@ const Index = () => {
         <AlertDialogContent className="bg-space-light border-accent/30 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-accent">上帝投掷骰子</AlertDialogTitle>
-            <AlertDialogDescription className="text-white/80">
-              是否要投掷骰子?
+            <AlertDialogDescription className="text-white/80 space-y-4">
+              <p>跑步时，我常随机踏入未知的街巷，让命运牵引，邂逅生活的惊喜。</p>
+              <p>又一次站在人生的十字路口，不知这一步，将通向何方？</p>
+              <p>此刻驻足的你，要不要和我一起，掷一掷命运的骰子？</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancel} className="bg-muted text-muted-foreground hover:bg-muted/80 border-0" >
-              No
+              否
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleAccept} className="bg-accent text-white hover:bg-accent/90">
-              Yes
+              是
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -17,7 +17,7 @@ export const gaodeImageryProvider = new Cesium.UrlTemplateImageryProvider({
 export const ellipsoidTerrainProvider = new Cesium.EllipsoidTerrainProvider({});
 
 // 初始相机位置和方向
-export const initialCameraDestination = Cesium.Cartesian3.fromDegrees(110.0, 30.0, 3000000);
+export const initialCameraDestination = Cesium.Cartesian3.fromDegrees(110.0, 26.0, 2800000);
 export const initialCameraOrientation = {
   heading: Cesium.Math.toRadians(0),
   pitch: Cesium.Math.toRadians(-90),
