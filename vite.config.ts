@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     cesium({
-      cesiumBaseUrl: '/stellar-personal-site/cesium'
+      cesiumBaseUrl: '/cesium'
     }), 
     mode === 'development' &&
     componentTagger(),

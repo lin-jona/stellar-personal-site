@@ -1,0 +1,65 @@
+# 工作流程名称
+name: Deploy React App to GitHub Pages
+
+# 触发工作流程的事件：当 push 到 main 分支时触发
+on:
+  push:
+    branches:
+      - test # 或者你的主分支名，如 master
+  # 允许你手动从 Actions 页签运行此工作流程
+  workflow_dispatch:
+
+# 工作流程运行所需的权限
+permissions:
+  contents: read
+  pages: write # 允许写入 GitHub Pages
+  id-token: write # OIDC Token，用于无密钥部署
+
+# 定义一个 job（任务），名为 build-and-deploy
+jobs:
+  build-and-deploy:
+    # 指定运行环境为最新的 Ubuntu
+    runs-on: ubuntu-latest
+    # 定义 GitHub Pages 的部署环境
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }} # 输出部署后的 URL
+
+    steps:
+      # 第一步：签出（Checkout）你的代码
+      - name: Checkout code
+        uses: actions/checkout@v4 # 使用官方的 checkout action
+
+      # 第二步：设置 Node.js 环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21' # 指定你项目兼容的 Node.js 版本
+          cache: 'npm' # 缓存 npm 依赖，加快后续构建速度 (如果是 yarn 用 'yarn')
+
+      # 第三步：安装项目依赖
+      - name: Install dependencies
+        run: npm ci # 使用 npm ci 更快更稳定，确保 package-lock.json 是最新的 (如果是 yarn 用 yarn install --frozen-lockfile)
+
+      # 第四步：执行构建命令
+      - name: Build project
+        run: npm run build # 运行你在 package.json 中定义的 build 命令
+        # 如果 build 命令需要环境变量，可以在这里设置，例如：
+        # env:
+        #   PUBLIC_URL: /${{ github.event.repository.name }} # 有些项目可能需要这个，但 homepage 字段通常足够
+
+      # 第五步：配置 GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      # 第六步：上传构建产物（dist 文件夹）作为 GitHub Pages 的 artifact
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 指定包含构建后静态文件的文件夹路径
+          path: './dist' # 如果你的构建输出是 build 文件夹，这里改成 './build'
+
+      # 第七步：部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # 使用官方的部署 action
