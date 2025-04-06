@@ -268,7 +268,7 @@ const Timeline = () => {
                 description=""
               >
                 <BillboardGraphics
-                  image={"/Airplane.png"}
+                  image={`${import.meta.env.BASE_URL}Airplane.png`}
                   scale={0.1}
                   disableDepthTestDistance={Number.POSITIVE_INFINITY}
                   heightReference={Cesium.HeightReference.CLAMP_TO_GROUND}

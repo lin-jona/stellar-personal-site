@@ -36,12 +36,12 @@ class DiceMaterialCache {
   private textureLoader: THREE.TextureLoader;
   private materials: THREE.MeshStandardMaterial[] | null = null;
   private faceTextures = [
-    '/textures/dice/1.png',
-    '/textures/dice/2.png',
-    '/textures/dice/3.png',
-    '/textures/dice/4.png',
-    '/textures/dice/5.png',
-    '/textures/dice/6.png',
+    `${import.meta.env.BASE_URL}textures/dice/1.png`,
+    `${import.meta.env.BASE_URL}textures/dice/2.png`,
+    `${import.meta.env.BASE_URL}textures/dice/3.png`,
+    `${import.meta.env.BASE_URL}textures/dice/4.png`,
+    `${import.meta.env.BASE_URL}textures/dice/5.png`,
+    `${import.meta.env.BASE_URL}textures/dice/6.png`,
   ];
 
   private constructor() {
@@ -56,6 +56,7 @@ class DiceMaterialCache {
   }
 
   public getMaterials(): THREE.MeshStandardMaterial[] {
+    console.log('this.materials',this.materials)
     if (!this.materials) {
       // 创建所有材质
       this.materials = this.faceTextures.map(texturePath => {
