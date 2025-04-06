@@ -56,7 +56,6 @@ class DiceMaterialCache {
   }
 
   public getMaterials(): THREE.MeshStandardMaterial[] {
-    console.log('this.materials',this.materials)
     if (!this.materials) {
       // 创建所有材质
       this.materials = this.faceTextures.map(texturePath => {
