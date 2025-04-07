@@ -8,6 +8,43 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   base: '/stellar-personal-site/',
+  
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // Cesium相关模块
+          if (id.includes('cesium')) {
+            return 'cesium';
+          }
+          
+          // React相关库
+          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            return 'react-vendor';
+          }
+          
+          // UI组件
+          if (id.includes('src/components/ui/')) {
+            return 'ui-components';
+          }
+          
+          // Hooks
+          if (id.includes('src/hooks/')) {
+            return 'hooks';
+          }
+          
+          // Three.js相关库
+          if (id.includes('three') || id.includes('@react-three')) {
+            return 'three';
+          }
+          
+          // 其他第三方库可以根据需要添加
+        }
+      }
+    },
+    // 增加警告限制，如果仍有大块超过此值才会警告
+    chunkSizeWarningLimit: 800
+  },
 
   server: { 
     host: mode === 'development' ? "localhost" : "::", // 开发环境使用localhost，生产环境保持原样
