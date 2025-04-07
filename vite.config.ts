@@ -103,7 +103,7 @@ export default defineConfig(({ mode }) => ({
 
     // Inject the value into import.meta.env
     'import.meta.env.VITE_CESIUM_BASE_URL': JSON.stringify('/stellar-personal-site/cesium/'),
-    // 如果你需要注入 Ion Token，也在这里或者通过 process.env 处理
-    // 'import.meta.env.VITE_CESIUM_ION_TOKEN': JSON.stringify(process.env.VITE_CESIUM_ION_TOKEN || 'YOUR_FALLBACK_TOKEN')
+    // 注入 Ion Token
+    'import.meta.env.VITE_CESIUM_ION_TOKEN': JSON.stringify(process.env.VITE_CESIUM_ION_TOKEN)
   }
 }));

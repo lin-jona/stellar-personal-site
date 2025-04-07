@@ -43,6 +43,8 @@ jobs:
 
       # 第四步：执行构建命令
       - name: Build project
+        env:
+          VITE_CESIUM_ION_TOKEN: ${{ secrets.CESIUM_ION_TOKEN }}
         run: npm run build # 运行你在 package.json 中定义的 build 命令
         # 如果 build 命令需要环境变量，可以在这里设置，例如：
         # env:

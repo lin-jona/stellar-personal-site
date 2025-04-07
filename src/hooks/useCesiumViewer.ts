@@ -3,7 +3,7 @@ import * as Cesium from 'cesium';
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
 // Cesium 配置常量
-const CESIUM_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlMTIwMDFhMi1lYTE3LTRlN2ItYjkyNC03NDZmODQ1NTE5MGIiLCJpZCI6MjgyNTk4LCJpYXQiOjE3NDE1MTc1ODd9.3eVQ4S6bC0EQXufwIqieOnrFQPSBOieEamC46Cj_yP8';
+const CESIUM_TOKEN = import.meta.env.VITE_CESIUM_ION_TOKEN;
 
 // 高德地图影像提供者
 export const gaodeImageryProvider = new Cesium.UrlTemplateImageryProvider({
