@@ -23,9 +23,49 @@ export default defineConfig(({ mode }) => ({
             return 'react-vendor';
           }
           
-          // UI组件
+          // Radix UI 组件分组
+          if (id.includes('@radix-ui/react-')) {
+            // 对话框相关组件
+            if (id.includes('dialog') || id.includes('alert-dialog') || id.includes('hover-card') || id.includes('popover')) {
+              return 'radix-dialogs';
+            }
+            // 导航相关组件
+            if (id.includes('navigation-menu') || id.includes('menubar') || id.includes('tabs')) {
+              return 'radix-navigation';
+            }
+            // 表单相关组件
+            if (id.includes('form') || id.includes('checkbox') || id.includes('radio-group') || id.includes('select') || id.includes('slider')) {
+              return 'radix-forms';
+            }
+            // 布局相关组件
+            if (id.includes('accordion') || id.includes('collapsible') || id.includes('separator')) {
+              return 'radix-layout';
+            }
+            // 其他基础组件
+            return 'radix-base';
+          }
+          
+          // 本地UI组件
           if (id.includes('src/components/ui/')) {
-            return 'ui-components';
+            const componentName = id.split('/').pop()?.split('.')[0];
+            // 对话框相关组件
+            if (['dialog', 'alert-dialog', 'hover-card', 'popover'].includes(componentName || '')) {
+              return 'ui-dialogs';
+            }
+            // 导航相关组件
+            if (['navigation-menu', 'menubar', 'tabs'].includes(componentName || '')) {
+              return 'ui-navigation';
+            }
+            // 表单相关组件
+            if (['form', 'checkbox', 'radio-group', 'select', 'slider'].includes(componentName || '')) {
+              return 'ui-forms';
+            }
+            // 布局相关组件
+            if (['accordion', 'collapsible', 'separator'].includes(componentName || '')) {
+              return 'ui-layout';
+            }
+            // 其他基础组件
+            return 'ui-base';
           }
           
           // Hooks

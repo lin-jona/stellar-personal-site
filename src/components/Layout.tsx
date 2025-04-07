@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { Suspense } from "react";
 import Navigation from "./Navigation";
-import StarCanvas from "./StarCanvas";
+
+const StarCanvas = React.lazy(() => import("./StarCanvas"));
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,7 +12,9 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, showNavbarDice }) => {
   return (
     <div className="min-h-screen bg-space-dark text-white relative overflow-hidden">
-      <StarCanvas />
+      <Suspense fallback={<div className="fixed inset-0 bg-space-dark" />}>
+        <StarCanvas />
+      </Suspense>
       <div className="absolute inset-0 bg-space-dark opacity-30 z-[2] pointer-events-none"></div>
       <div className="absolute inset-0 bg-grid bg-[length:50px_50px] opacity-20 z-[3] pointer-events-none"></div>
       <Navigation showDice={showNavbarDice} />
