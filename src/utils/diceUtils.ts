@@ -36,12 +36,12 @@ class DiceMaterialCache {
   private textureLoader: THREE.TextureLoader;
   private materials: THREE.MeshStandardMaterial[] | null = null;
   private faceTextures = [
-    `${import.meta.env.BASE_URL}textures/dice/1.png`,
-    `${import.meta.env.BASE_URL}textures/dice/2.png`,
-    `${import.meta.env.BASE_URL}textures/dice/3.png`,
-    `${import.meta.env.BASE_URL}textures/dice/4.png`,
-    `${import.meta.env.BASE_URL}textures/dice/5.png`,
-    `${import.meta.env.BASE_URL}textures/dice/6.png`,
+    `${import.meta.env.BASE_URL}textures/dice/1.webp`,
+    `${import.meta.env.BASE_URL}textures/dice/2.webp`,
+    `${import.meta.env.BASE_URL}textures/dice/3.webp`,
+    `${import.meta.env.BASE_URL}textures/dice/4.webp`,
+    `${import.meta.env.BASE_URL}textures/dice/5.webp`,
+    `${import.meta.env.BASE_URL}textures/dice/6.webp`,
   ];
 
   private constructor() {
