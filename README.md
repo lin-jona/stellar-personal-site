@@ -3,7 +3,7 @@
 ## 项目信息
 
 一个基于 React 框架，利用 Cesium.js 和 Three.js 增强视觉效果的个人展示网站。
-**URL**: https://lovable.dev/projects/4e6c8421-e945-475a-8527-3789e26eff8d
+**URL**: https://lin-jona.github.io/stellar-personal-site
 
 ## 主要功能和特点
 
@@ -27,7 +27,11 @@
     - 结合地理专业背景，使用 Cesium.js 增加个人经历时间线（出生地、大学所在地、工作地）板块，同时添加动画交互。
     - 因为此刻正值求职期间，由未来的一些不确定性，想到添加投掷骰子的交互。最终使用 Three.js 创建一个骰子动画，并与读者有一个交互。
 
-5. 使用 React.lazy 、React.memo 、useCallback 等重构优化代码，进行性能优化。
+5. 多维度性能优化。
+    - 使用 `React.lazy` 动态导入非关键路径组件，结合 `Suspense` 边界处理加载状态
+    - 通过 `React.memo` 实现组件浅比较缓存，`useCallback` 冻结回调函数引用
+    - 图片资源转换为 WebP 格式，减小图片体积，提升加载速度
+    - 对于较大的组件（如Dialog、Popover等），单独进行代码分割
 
 ## 项目结构
 
