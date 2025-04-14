@@ -24,18 +24,9 @@ export default defineConfig(({ mode }) => ({
             return 'react-router';
           }
 
-          // Cesium相关模块 - 按功能分块
+          // Cesium相关模块
           if (id.includes('cesium')) {
-            if (id.includes('Scene') || id.includes('Globe') || id.includes('Camera')) {
-              return 'cesium-core';
-            }
-            if (id.includes('Entity') || id.includes('DataSource')) {
-              return 'cesium-entities';
-            }
-            if (id.includes('Widget') || id.includes('Timeline')) {
-              return 'cesium-widgets';
-            }
-            return 'cesium-other';
+            return 'cesium';
           }
 
           // Three.js相关库 - 按功能分块
