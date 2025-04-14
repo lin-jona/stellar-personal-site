@@ -13,69 +13,90 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Cesium相关模块
+          // 核心依赖
+          if (id.includes('react/')) {
+            return 'react-core';
+          }
+          if (id.includes('react-dom')) {
+            return 'react-dom';
+          }
+          if (id.includes('react-router-dom')) {
+            return 'react-router';
+          }
+
+          // Cesium相关模块 - 按功能分块
           if (id.includes('cesium')) {
-            return 'cesium';
+            if (id.includes('Scene') || id.includes('Globe') || id.includes('Camera')) {
+              return 'cesium-core';
+            }
+            if (id.includes('Entity') || id.includes('DataSource')) {
+              return 'cesium-entities';
+            }
+            if (id.includes('Widget') || id.includes('Timeline')) {
+              return 'cesium-widgets';
+            }
+            return 'cesium-other';
           }
-          
-          // React相关库
-          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-            return 'react-vendor';
+
+          // Three.js相关库 - 按功能分块
+          if (id.includes('three')) {
+            if (id.includes('controls')) {
+              return 'three-controls';
+            }
+            if (id.includes('loaders')) {
+              return 'three-loaders';
+            }
+            return 'three-core';
           }
-          
-          // Radix UI 组件分组
-          if (id.includes('@radix-ui/react-')) {
-            // 对话框相关组件
-            if (id.includes('dialog') || id.includes('alert-dialog') || id.includes('hover-card') || id.includes('popover')) {
-              return 'radix-dialogs';
-            }
-            // 导航相关组件
-            if (id.includes('navigation-menu') || id.includes('menubar') || id.includes('tabs')) {
-              return 'radix-navigation';
-            }
-            // 表单相关组件
-            if (id.includes('form') || id.includes('checkbox') || id.includes('radio-group') || id.includes('select') || id.includes('slider')) {
-              return 'radix-forms';
-            }
-            // 布局相关组件
-            if (id.includes('accordion') || id.includes('collapsible') || id.includes('separator')) {
-              return 'radix-layout';
-            }
-            // 其他基础组件
-            return 'radix-base';
-          }
-          
-          // 本地UI组件
-          if (id.includes('src/components/ui/')) {
-            const componentName = id.split('/').pop()?.split('.')[0];
-            // 对话框相关组件
-            if (['dialog', 'alert-dialog', 'hover-card', 'popover'].includes(componentName || '')) {
+
+          // UI组件库
+          if (id.includes('@radix-ui/react-') || id.includes('src/components/ui/')) {
+            const isRadix = id.includes('@radix-ui/react-');
+            const componentName = isRadix 
+              ? id.split('@radix-ui/react-')[1].split('/')[0]
+              : id.split('/').pop()?.split('.')[0];
+
+            // 对话框相关
+            if (['dialog', 'alert-dialog', 'hover-card', 'popover'].some(name => 
+              componentName?.includes(name))) {
               return 'ui-dialogs';
             }
-            // 导航相关组件
-            if (['navigation-menu', 'menubar', 'tabs'].includes(componentName || '')) {
+            // 导航相关
+            if (['navigation-menu', 'menubar', 'tabs'].some(name => 
+              componentName?.includes(name))) {
               return 'ui-navigation';
             }
-            // 表单相关组件
-            if (['form', 'checkbox', 'radio-group', 'select', 'slider'].includes(componentName || '')) {
+            // 表单相关
+            if (['form', 'checkbox', 'radio-group', 'select', 'slider'].some(name => 
+              componentName?.includes(name))) {
               return 'ui-forms';
             }
-            // 布局相关组件
-            if (['accordion', 'collapsible', 'separator'].includes(componentName || '')) {
-              return 'ui-layout';
-            }
-            // 其他基础组件
             return 'ui-base';
           }
-          
+
+          // 动态导入的页面组件
+          if (id.includes('src/components/') && !id.includes('src/components/ui/')) {
+            if (id.includes('DiceThrowScene')) {
+              return 'scene-dice';
+            }
+            if (id.includes('Hero')) {
+              return 'scene-hero';
+            }
+            const componentName = id.split('/').pop()?.split('.')[0];
+            if (['AboutMe', 'Projects', 'Timeline', 'Contact'].includes(componentName || '')) {
+              return `page-${componentName?.toLowerCase()}`;
+            }
+          }
+
           // Hooks
           if (id.includes('src/hooks/')) {
-            return 'hooks';
-          }
-          
-          // Three.js相关库
-          if (id.includes('three') || id.includes('@react-three')) {
-            return 'three';
+            if (id.includes('usePathAnimation') || id.includes('useParallaxEffect')) {
+              return 'hooks-animation';
+            }
+            if (id.includes('useDice')) {
+              return 'hooks-dice';
+            }
+            return 'hooks-other';
           }
           
           // 其他第三方库可以根据需要添加

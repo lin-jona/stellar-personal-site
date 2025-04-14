@@ -1,11 +1,6 @@
 import Layout from "@/components/Layout";
 import Hero from "@/components/Hero";
-import AboutMe from "@/components/AboutMe";
-import Projects from "@/components/Projects";
-import Timeline from "@/components/Timeline";
-import Contact from "@/components/Contact";
-import DiceThrowScene from '@/components/DiceThrowScene';
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { initParallaxEffect } from "@/utils/planet";
 import { usePopupTimer } from "@/hooks/usePopupTimer";
 import { useDiceScene } from "@/hooks/useDiceScene";
@@ -20,6 +15,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// 动态导入组件
+const AboutMe = lazy(() => import("@/components/AboutMe"));
+const Projects = lazy(() => import("@/components/Projects"));
+const Timeline = lazy(() => import("@/components/Timeline"));
+const Contact = lazy(() => import("@/components/Contact"));
+const DiceThrowScene = lazy(() => import('@/components/DiceThrowScene'));
+
+// 简单的加载组件
+const Loading = () => (
+  <div className="w-full h-[200px] flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+  </div>
+);
 
 const Index = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -91,13 +100,22 @@ const Index = () => {
   return (
     <Layout showNavbarDice={showNavbarDice}>
       <Hero />
-      <AboutMe />
-      <Projects />
-      <Timeline />
-      <Contact />
+      <Suspense fallback={<Loading />}>
+        <AboutMe />
+      </Suspense>
+      <Suspense fallback={<Loading />}>
+        <Projects />
+      </Suspense>
+      <Suspense fallback={<Loading />}>
+        <Timeline />
+      </Suspense>
+      <Suspense fallback={<Loading />}>
+        <Contact />
+      </Suspense>
       
       {/* 条件渲染 DiceThrowScene */}
       {showDiceThrowScene && (
+        <Suspense fallback={<Loading />}>
         <div 
           style={{
             position: 'fixed',
@@ -123,6 +141,7 @@ const Index = () => {
           </button>
           <DiceThrowScene />
         </div>
+        </Suspense>
       )}
       
       <footer className="py-8 bg-black text-center text-white/50 text-sm">
